@@ -7,7 +7,8 @@ import {
   FiCamera,
   FiWatch,
 } from "react-icons/fi"; // Import React Icons
-import { checkValidData } from "../../util/validate";
+import { graphQLCommand } from "../../util";
+
 
 const LoginComponent = () => {
   const [isSignInForm, setSignInForm] = useState(true);
@@ -24,37 +25,65 @@ const LoginComponent = () => {
     setErrorMsg(""); // Clear error messages when toggling forms
   };
 
-  const handleButtonClick = () => {
-    if (!isSignInForm) {
-      // Validation for sign-up fields
+  const handleButtonClick = async () => {
+    if (isSignInForm) {
+      // Handle Sign In
+      try {
+        const query = `
+          mutation ($email: String!, $password: String!) {
+            login(email: $email, password: $password) {
+              message
+              user {
+                id
+                fullName
+                email
+              }
+            }
+          }
+        `;
+        const variables = { email: email.current.value, password: password.current.value };
+        const response = await graphQLCommand(query, variables);
+
+        alert(response.login.message);
+        console.log("User Logged In:", response.login.user);
+        
+      } catch (error) {
+        setErrorMsg(error.message);
+      }
+    } else {
+      // Handle Sign Up
       if (password.current.value !== confirmPassword.current.value) {
         setErrorMsg("Passwords do not match.");
         return;
       }
 
-      if (!fullName.current.value || !userId.current.value || !address.current.value) {
-        setErrorMsg("All fields are required.");
-        return;
+      try {
+        const query = `
+          mutation ($fullName: String!, $userId: String!, $email: String!, $password: String!, $address: String) {
+            signup(fullName: $fullName, userId: $userId, email: $email, password: $password, address: $address) {
+              message
+              user {
+                id
+                fullName
+                email
+              }
+            }
+          }
+        `;
+
+        const variables = {
+          fullName: fullName.current.value,
+          userId: userId.current.value,
+          email: email.current.value,
+          password: password.current.value,
+          address: address.current.value,
+        };
+
+        const response = await graphQLCommand(query, variables);
+        alert(response.signup.message);
+      } catch (error) {
+        setErrorMsg(error.message);
       }
-    }
-
-    // Validation for sign-in and shared fields
-    const message = checkValidData(email.current.value, password.current.value);
-    setErrorMsg(message);
-
-    if (!message) {
-      // Proceed with the form submission
-      console.log("Submitted Data:", {
-        email: email.current.value,
-        password: password.current.value,
-        ...(isSignInForm
-          ? {}
-          : {
-              fullName: fullName.current.value,
-              userId: userId.current.value,
-              address: address.current.value,
-            }),
-      });
     }
   };
 
@@ -62,8 +91,8 @@ const LoginComponent = () => {
     <div
       className="relative min-h-screen flex justify-center items-center bg-gradient-to-b from-gray-50 to-yellow-100"
     >
-      {/* Colorful Icons in the Background */}
-      {[ 
+      {/* Background Icons */}
+      {[
         { Icon: FiSmartphone, color: "#FF5733", top: "10%", left: "15%" },
         { Icon: FiTablet, color: "#33FF57", top: "25%", left: "75%" },
         { Icon: FiMonitor, color: "#3357FF", top: "40%", left: "30%" },
@@ -74,16 +103,6 @@ const LoginComponent = () => {
         { Icon: FiTablet, color: "#581845", top: "35%", left: "10%" },
         { Icon: FiMonitor, color: "#28B463", top: "50%", left: "80%" },
         { Icon: FiHeadphones, color: "#C70039", top: "65%", left: "70%" },
-        { Icon: FiCamera, color: "#900C3F", top: "20%", left: "5%" },
-        { Icon: FiWatch, color: "#FFC300", top: "80%", left: "30%" },
-        { Icon: FiSmartphone, color: "#DAF7A6", top: "5%", left: "80%" },
-        { Icon: FiTablet, color: "#33FF57", top: "60%", left: "15%" },
-        { Icon: FiMonitor, color: "#3357FF", top: "75%", left: "40%" },
-        { Icon: FiHeadphones, color: "#FF5733", top: "30%", left: "55%" },
-        { Icon: FiCamera, color: "#FFC300", top: "45%", left: "25%" },
-        { Icon: FiWatch, color: "#DAF7A6", top: "10%", left: "60%" },
-        { Icon: FiSmartphone, color: "#C70039", top: "65%", left: "90%" },
-        { Icon: FiTablet, color: "#FF33A1", top: "85%", left: "75%" },
       ].map(({ Icon, color, top, left }, index) => (
         <Icon
           key={index}
@@ -98,17 +117,15 @@ const LoginComponent = () => {
         />
       ))}
 
-      {/* Login/Sign-Up Form */}
+      {/* Form */}
       <form
         onSubmit={(e) => e.preventDefault()}
         className="p-8 md:p-12 bg-gradient-to-r from-blue-50 to-blue-100 border border-gray-300 rounded-lg shadow-md hover:shadow-xl w-11/12 sm:w-8/12 md:w-6/12 lg:w-4/12 my-16 mx-auto text-black relative z-10"
-        style={{ marginBottom: "50px" }}
       >
         <h1 className="font-bold text-2xl md:text-3xl py-4 text-center">
           {isSignInForm ? "Sign In" : "Sign Up"}
         </h1>
 
-        {/* Sign-Up Specific Fields */}
         {!isSignInForm && (
           <>
             <input
@@ -131,8 +148,6 @@ const LoginComponent = () => {
             />
           </>
         )}
-
-        {/* Shared Fields */}
         <input
           ref={email}
           type="email"
@@ -153,26 +168,18 @@ const LoginComponent = () => {
             className="p-3 md:p-4 my-3 w-full bg-gray-700 text-white rounded-lg"
           />
         )}
-
-        {/* Error Message */}
         <p className="text-red-500 text-sm py-2 font-bold">{errorMsg}</p>
-
-        {/* Button */}
         <button
           className="p-2 md:p-3 my-4 bg-red-700 text-white w-full rounded-lg hover:bg-red-800"
           onClick={handleButtonClick}
         >
           {isSignInForm ? "Sign In" : "Sign Up"}
         </button>
-
-        {/* Toggle Form Link */}
         <p
           className="py-2 text-center cursor-pointer text-blue-500 hover:underline"
           onClick={toggleSignInForm}
         >
-          {isSignInForm
-            ? "New to shop? Sign Up Now"
-            : "Already a user? Sign In Now"}
+          {isSignInForm ? "New to shop? Sign Up Now" : "Already a user? Sign In Now"}
         </p>
       </form>
     </div>
