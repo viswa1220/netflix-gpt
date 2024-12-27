@@ -21,9 +21,9 @@ import AdminBookingHistory from "../AdminBookingHistory/AdminBookingHistory";
 
 const BodyComponent = () => {
   const appRouter = createBrowserRouter([
-    { path: "/", element: <LoginComponent /> },
+    { path: "/login", element: <LoginComponent /> },
     { path: "/browse", element: <BrowseComponent /> },
-    { path: "/home", element: <HomeComponent /> },
+    { path: "/", element: <HomeComponent /> },
     { path: "/products", element: <ProductComponent /> },
     { path: "/products/:id", element: <ProductDetailComponent /> },
     { path: "/cart", element: <CartComponent /> },
