@@ -22,7 +22,7 @@ app.use(cors({
 }));
 // Load GraphQL schema and resolvers
 const typeDefs = fs.readFileSync(path.resolve(__dirname, "./graphql/schema.graphql"), "utf-8");
-const resolvers = require("./graphql/resolver");
+const resolvers = require("./graphql");
 
 const startServer = async () => {
   try {

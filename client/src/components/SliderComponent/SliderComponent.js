@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import Slider from "react-slick";
 
 // Import Slick Carousel default styles
@@ -11,7 +12,7 @@ const sliderItems = [
     img: "airpod.png",
   },
   {
-    name: "Smartwatches",
+    name: "Smart Watch",
     img: "smartwatch.png",
   },
   {
@@ -23,7 +24,7 @@ const sliderItems = [
     img: "combos.png",
   },
   {
-    name: "Shoes",
+    name: "shoes",
     img: "shoes.png",
   },
   {
@@ -82,6 +83,8 @@ const PrevArrow = (props) => {
 };
 
 const SliderComponent = () => {
+  const navigate = useNavigate();
+
   // Slider settings for react-slick
   const settings = {
     dots: false,
@@ -119,6 +122,12 @@ const SliderComponent = () => {
     ],
   };
 
+  // Clicking an item -> navigate to /products/<categoryName>
+  const handleClick = (categoryName) => {
+    
+    navigate(`/category/${categoryName}`);
+  };
+
   return (
     <div className="bg-white">
       {/* Title */}
@@ -133,7 +142,10 @@ const SliderComponent = () => {
         <Slider {...settings}>
           {sliderItems.map((item) => (
             <div key={item.name} className="px-2">
-              <div className="flex flex-col items-center">
+              <div
+                className="flex flex-col items-center cursor-pointer"
+                onClick={() => handleClick(item.name)}
+              >
                 {/* Circle background */}
                 <div className="rounded-full w-32 h-32 overflow-hidden bg-blue-100">
                   <img
@@ -144,7 +156,7 @@ const SliderComponent = () => {
                 </div>
 
                 {/* Item name */}
-                <p className="text-sm font-medium text-gray-700 text-center">
+                <p className="text-sm font-medium text-gray-700 text-center mt-2">
                   {item.name}
                 </p>
               </div>

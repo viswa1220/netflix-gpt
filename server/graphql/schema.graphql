@@ -1,21 +1,152 @@
 type Query {
+  # Fetch all users
   users: [User!]!
+
+  # Fetch all categories
+  categories: [Category!]!
+
+  # Fetch all products
+  products: [Product!]!
+
+  # Get a category by its name
+  getCategoryByName(name: String!): Category
+
+  # Get products by category ID
+  productsByCategory(name: String!): [Product!]!
+
+  # Get a product by ID
+  getProductById(id: ID!): Product
+
+  # Get reviews by product ID
+  getReviewsByProduct(productId: ID!): [Review!]!
+
+  # Get products by category name (using category name as input)
+  getProductsByCategoryName(name: String!): [Product]
+
+  # Fetch all products (for filter-based rendering)
+  getAllProducts: [Product]
+  productsByCategoryId(categoryId: ID!): [Product!]!
+
+  # Fetch products with category filter (by category name and additional filters)
+  getProductsByFilter(
+    category: String!
+    priceRange: [Float]
+    gender: String
+  ): [Product]
 }
 
 type Mutation {
-  signup(fullName: String!, userId: String!, email: String!, password: String!, address: String): AuthPayload!
-  login(email: String!, password: String!): AuthPayload!
-}
+  # User mutations
+  signup(
+    fullName: String!
+    userId: String!
+    email: String!
+    password: String!
+    address: String!
+  ): AuthResponse!
 
-type AuthPayload {
-  message: String!
-  user: User
+  login(email: String!, password: String!): AuthResponse!
+
+  # Category mutations
+  addCategory(name: String!): Category!
+  updateCategory(id: ID!, name: String!): Category!
+  deleteCategory(id: ID!): MessageResponse!
+
+  # Product mutations
+  addProduct(input: ProductInput!): Product!
+  updateProduct(id: ID!, input: ProductInput!): Product!
+  deleteProduct(id: ID!): MessageResponse!
+
+  # Review mutations
+  addReview(input: ReviewInput!): Review!
 }
 
 type User {
   id: ID!
   fullName: String!
+  userId: String!
   email: String!
-  address: String
-  createdAt: String
+  address: String!
+}
+
+type Category {
+  id: ID!
+  name: String!
+  createdAt: String!
+}
+
+type Product {
+  id: ID!
+  name: String!
+  price: Float!
+  availableCount: Int!
+  offer: String
+  productCategory: Category
+  description: String
+  features: [String!]!
+  colors: [ColorVariant!]!
+  mainImage: String
+  sliderImages: [String!]
+  video: String
+  sizes: [String!]
+  gender: String!
+  Brand: String!
+  saleStatus: Boolean
+  trendingStatus: Boolean
+  createdAt: String!
+  reviews: [Review!]
+}
+
+input ProductInput {
+  name: String!
+  price: Float!
+  availableCount: Int!
+  offer: String
+  productCategory: ID # Reference to Category ID
+  description: String
+  features: [String!]!
+  colors: [ColorVariantInput!]!
+  mainImage: String
+  sliderImages: [String!]
+  video: String
+  sizes: [String!]
+  Brand: String!
+  gender: String!
+  saleStatus: Boolean
+  trendingStatus: Boolean
+}
+
+type ColorVariant {
+  color: String!
+  image: String
+}
+
+input ColorVariantInput {
+  color: String!
+  image: String
+}
+
+type AuthResponse {
+  message: String!
+  user: User
+}
+
+type MessageResponse {
+  message: String!
+}
+
+type Review {
+  id: ID!
+  product: Product! # Add this field
+  name: String! # Name of the reviewer
+  comment: String!
+  rating: Int!
+  createdAt: String!
+}
+
+input ReviewInput {
+  productId: ID!
+  name: String! # Name of the reviewer
+  comment: String!
+  rating: Int!
 }

@@ -8,6 +8,7 @@ import {
   FiWatch,
 } from "react-icons/fi"; // Import React Icons
 import { graphQLCommand } from "../../util";
+import { useNavigate } from "react-router-dom";
 
 
 const LoginComponent = () => {
@@ -19,7 +20,7 @@ const LoginComponent = () => {
   const userId = useRef(null);
   const address = useRef(null);
   const [errorMsg, setErrorMsg] = useState("");
-
+const navigate=useNavigate();
   const toggleSignInForm = () => {
     setSignInForm(!isSignInForm);
     setErrorMsg(""); // Clear error messages when toggling forms
@@ -45,6 +46,7 @@ const LoginComponent = () => {
         const response = await graphQLCommand(query, variables);
 
         alert(response.login.message);
+        navigate("/")
         console.log("User Logged In:", response.login.user);
         
       } catch (error) {

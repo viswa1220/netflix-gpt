@@ -88,7 +88,7 @@ const CartComponent = () => {
                   return (
                     <div
                       key={index}
-                      className="flex flex-col md:flex-row items-start gap-4 border p-4 rounded-md shadow-sm bg-gradient-to-r from-blue-100 to-blue-50"
+                      className="flex flex-col md:flex-row items-start gap-4 border p-4 rounded-md shadow-sm bg-gradient-to-r from-purple-50 to-purple-100"
                     >
                       {item.image && (
                         <img
@@ -159,7 +159,7 @@ const CartComponent = () => {
 
             {/* Price Summary */}
             <div className="w-full lg:w-2/5">
-              <div className="bg-gradient-to-r from-blue-100 to-blue-50 p-4 rounded-md shadow-sm">
+              <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-md shadow-sm">
                 <h2 className="text-xl font-bold mb-4">Price Details</h2>
                 <div className="flex justify-between mb-2">
                   <span>

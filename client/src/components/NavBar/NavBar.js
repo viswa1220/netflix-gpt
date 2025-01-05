@@ -5,13 +5,13 @@ const NavBar = () => {
   // Dummy nav links
   const navLinks = [
     {name: "All Products", href: "/products"},
-    { name: "Airpods", href: "/airpods" },
-    { name: "Speakers", href: "/speakers" },
-    { name: "Headphones", href: "/headphones" },
-    { name: "Smartwatches", href: "/smartwatches" },
-    { name: "Chargers & Cables", href: "/chargers" },
-    { name: "Covers & Straps", href: "/covers" },
-    { name: "Shoes", href: "/shoes" },
+    { name: "Airpods", href: "/category/Airpods" },
+    { name: "Speakers", href: "/products/speakers" },
+    { name: "Headphones", href: "/products/headphones" },
+    { name: "Smartwatches", href: "/products/smartwatches" },
+    { name: "Chargers & Cables", href: "/products/chargers" },
+    { name: "Covers & Straps", href: "/products/covers" },
+    { name: "Shoes", href: "/products/shoes" },
     { name: "cart", href: "/cart" }
   ];
 

@@ -99,7 +99,7 @@ const Dashboard = () => {
         {metrics.map((metric, index) => (
           <div
             key={index}
-            className="p-6 bg-gradient-to-r from-blue-100 to-blue-50 text-black border-2 border-gray-300 rounded-lg shadow-md hover:shadow-xl"
+            className="p-6 bg-gradient-to-r from-purple-50 to-purple-100 text-black border-2 border-gray-300 rounded-lg shadow-md hover:shadow-xl"
           >
             <h2 className="text-lg font-semibold">{metric.label}</h2>
             <p className="text-3xl font-bold">{metric.value}</p>
@@ -109,11 +109,11 @@ const Dashboard = () => {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="p-6 bg-gradient-to-r from-blue-100 to-blue-50 border-2 border-gray-300 rounded-lg shadow-md hover:shadow-xl">
+        <div className="p-6 bg-gradient-to-r from-purple-50 to-purple-100 border-2 border-gray-300 rounded-lg shadow-md hover:shadow-xl">
           <h2 className="text-xl font-semibold mb-4 text-black">Sales Trends</h2>
           <div id="sales-chart" className="w-full h-64"></div>
         </div>
-        <div className="p-6 bg-gradient-to-r from-blue-100 to-blue-50 border-2 border-gray-300 rounded-lg shadow-md hover:shadow-xl">
+        <div className="p-6 bg-gradient-to-r from-purple-50 to-purple-100 border-2 border-gray-300 rounded-lg shadow-md hover:shadow-xl">
           <h2 className="text-xl font-semibold mb-4 text-black">Category-wise Revenue</h2>
           <div id="revenue-chart" className="w-full h-64"></div>
         </div>
@@ -122,7 +122,7 @@ const Dashboard = () => {
       {/* Navigation and Recent Activities */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Navigation Section */}
-        <div className="col-span-1 p-6 bg-gradient-to-r from-blue-100 to-blue-50 border-2 border-gray-300 rounded-lg shadow-md hover:shadow-xl">
+        <div className="col-span-1 p-6 bg-gradient-to-r from-purple-50 to-purple-100 border-2 border-gray-300 rounded-lg shadow-md hover:shadow-xl">
           <h2 className="text-xl font-semibold mb-4">Navigation</h2>
           <ul className="space-y-4">
             {navigationLinks.map((link, index) => (
@@ -139,7 +139,7 @@ const Dashboard = () => {
         </div>
 
         {/* Recent Activities Section */}
-        <div className="col-span-2 p-6 bg-gradient-to-r from-blue-100 to-blue-50 border-2 border-gray-300 rounded-lg shadow-md hover:shadow-xl">
+        <div className="col-span-2 p-6 bg-gradient-to-r from-purple-50 to-purple-100 border-2 border-gray-300 rounded-lg shadow-md hover:shadow-xl">
           <h2 className="text-xl font-semibold mb-4">Recent Activities</h2>
           <ul className="space-y-4">
             {recentActivities.map((activity, index) => (

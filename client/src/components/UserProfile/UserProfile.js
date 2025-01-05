@@ -64,7 +64,7 @@ const UserProfile = () => {
     <div className="p-6 space-y-6">
       {/* User Details */}
       <div
-        className="p-6 bg-gradient-to-r from-blue-100 to-blue-50  rounded-lg 
+        className="p-6 bg-gradient-to-r from-purple-50 to-purple-100  rounded-lg 
           shadow-md  text-black"
       >
         <h1 className="text-2xl font-bold mb-4">My Profile</h1>
@@ -84,7 +84,7 @@ const UserProfile = () => {
 
       {/* Ongoing Orders */}
       <div
-        className="p-6 bg-gradient-to-r from-blue-100 to-blue-50
+        className="p-6 bg-gradient-to-r from-purple-50 to-purple-100
           border border-gray-300 
           rounded-lg 
           shadow-md  text-black"
@@ -145,7 +145,7 @@ const UserProfile = () => {
 
       {/* Booking History */}
       <div
-        className="p-6 bg-gradient-to-r from-blue-100 to-blue-50
+        className="p-6 bg-gradient-to-r from-purple-50 to-purple-100
           border border-gray-300 
           rounded-lg 
           shadow-md  text-black"

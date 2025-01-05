@@ -3,7 +3,7 @@ import LoginComponent from "../Login/LoginComponent";
 import BrowseComponent from "../BrowseComponent/BrowseComponent";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import HomeComponent from "../Home/HomeComponent";
-import ProductComponent from "../ProductComponent/ProductComponent";
+import ProductPage from "../ProductComponent/ProductPage";
 import ProductDetailComponent from "../ProductDetailComponent/ProductDetailComponent";
 import Footer from "../Footer/Footer";
 import CheckoutForm from "../CheckoutForm/CheckoutForm";
@@ -24,8 +24,10 @@ const BodyComponent = () => {
     { path: "/login", element: <LoginComponent /> },
     { path: "/browse", element: <BrowseComponent /> },
     { path: "/", element: <HomeComponent /> },
-    { path: "/products", element: <ProductComponent /> },
-    { path: "/products/:id", element: <ProductDetailComponent /> },
+    { path: "/products", element: <ProductPage /> },
+    { path: "/category/:categoryName", element: <ProductPage /> },
+    { path: "/products/:gender/", element: <ProductPage /> },
+    { path: "/category/:categoryName/:id", element: <ProductDetailComponent /> },
     { path: "/cart", element: <CartComponent /> },
     { path: "/checkout", element: <CheckoutForm /> },
     { path: "/thankyou", element: <Thankyou /> },
@@ -39,7 +41,7 @@ const BodyComponent = () => {
   ]);
 
   return (
-    <div className="flex flex-col min-h-screen  bg-gradient-to-b from-gray-50 to-yellow-100">
+    <div className="flex flex-col min-h-screen  bg-gradient-to-b from-gray-100 to-yellow-200">
       <CartProvider>
         <div className="flex-grow">
           <RouterProvider router={appRouter} />

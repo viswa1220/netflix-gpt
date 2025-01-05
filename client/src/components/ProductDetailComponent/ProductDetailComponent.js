@@ -1,154 +1,104 @@
-// src/components/ProductDetailComponent.js
 import React, { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import NavBar from "../NavBar/NavBar";
-import { CartContext } from "../../context/CartContext"; // Import the Cart Context
-
-// Define dummyData within the component or import it if it's in a separate file
-const dummyData = [
-  {
-    id: 1,
-    name: "Airpods Pro",
-    price: 2200,
-    availableCount: 10,
-    offer: "10% OFF",
-    colors: [
-      {
-        color: "White",
-        image: "/airpodwhite.png",
-      },
-      {
-        color: "Black",
-        image: "/airpod.png",
-      },
-    ],
-    sizes: null,
-    images: ["/airpod.png", "/airpodblack.png"],
-    video: "/product_video.mp4",
-    description:
-      "Airpods Pro offers active noise cancellation, transparency mode, and exceptional sound quality.",
-    features: [
-      "Active noise cancellation",
-      "Transparency mode",
-      "20 hours battery life",
-      "Compatible with iOS and Android",
-    ],
-    reviews: [
-      { id: 1, name: "John Doe", comment: "Great product!", rating: 5 },
-      { id: 2, name: "Jane Smith", comment: "Value for money.", rating: 4 },
-      { id: 3, name: "Jane Smith", comment: "Value for money.", rating: 4 },
-    ],
-  },
-  {
-    id: 3,
-    name: "Running Shoes",
-    price: 300,
-    availableCount: 5,
-    offer: "15% OFF",
-    colors: [
-      {
-        color: "Green",
-        image: "/airpodwhite.png",
-      },
-      {
-        color: "Black",
-        image: "/airpodwhite.png",
-      },
-    ],
-    sizes: ["40", "42", "44", "46"], // Available sizes
-    images: ["https://via.placeholder.com/400x400?text=Shoes+View"],
-    description: "Durable and lightweight running shoes for daily use.",
-    features: [
-      "Breathable mesh material",
-      "Available in multiple sizes",
-      "Lightweight and comfortable",
-      "Great for long-distance running",
-    ],
-    reviews: [
-      { id: 1, name: "Alice Brown", comment: "Super comfy!", rating: 5 },
-      { id: 2, name: "Bob White", comment: "Good value.", rating: 4 },
-    ],
-  },
-];
-
+import { CartContext } from "../../context/CartContext";
+import { graphQLCommand } from "../../util";
+import RelatedProductsSection from "../RelatedProductsSection/RelatedProductsSection";
 const ProductDetailComponent = () => {
-  const { id } = useParams(); // Get product ID from route params
-  const [product, setProduct] = useState(null); // Current product
+  const { categoryName, id } = useParams(); // Extract category and product ID from URL
+  const [product, setProduct] = useState(null);
   const [selectedColor, setSelectedColor] = useState(null);
-  const [selectedSize, setSelectedSize] = useState(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [visibleReviews, setVisibleReviews] = useState(2);
+  const [selectedImage, setSelectedImage] = useState(null);
   const [showAddReview, setShowAddReview] = useState(false);
-  const [newReview, setNewReview] = useState({
-    name: "",
-    comment: "",
-    rating: 0,
-  });
+  const [newReview, setNewReview] = useState({ comment: "", rating: 0 });
+  const [loading, setLoading] = useState(true);
+  const [productLoaded, setProductLoaded] = useState(false); // To prevent re-fetching if already fetched
   const navigate = useNavigate();
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [reviewsToShow, setReviewsToShow] = useState(5);
 
-  const { addToCart } = useContext(CartContext); // Use the Cart Context
+  const { addToCart } = useContext(CartContext);
 
-  // Fetch product based on ID
-  useEffect(() => {
-    const foundProduct = dummyData.find((p) => p.id === parseInt(id, 10));
-    setProduct(foundProduct);
-
-    if (foundProduct) {
-      if (foundProduct.colors?.length > 0) {
-        setSelectedColor(foundProduct.colors[0]); // Set default color
+  // Fetch product details by ID
+  const fetchProductDetails = async () => {
+  
+    const PRODUCT_QUERY = `
+      query GetProductById($id: ID!) {
+        getProductById(id: $id) {
+          id
+          name
+          price
+          offer
+          availableCount
+          colors {
+            color
+            image
+          }
+          mainImage
+          sliderImages
+          productCategory{
+            id
+            name
+          }
+          video
+          description
+          features
+          reviews {  
+            name
+            comment
+            rating
+            createdAt
+          }
+        }
       }
-      if (foundProduct.sizes?.length > 0) {
-        setSelectedSize(foundProduct.sizes[0]); // Set default size
+    `;
+
+    try {
+      const response = await graphQLCommand(PRODUCT_QUERY, { id });
+      const fetchedProduct = response.getProductById;
+
+      if (fetchedProduct) {
+        // Combine slider images and video into one array
+        const sliderContent = [
+          ...(fetchedProduct.sliderImages || []),
+          fetchedProduct.video ? fetchedProduct.video : null,
+        ].filter(Boolean);
+
+        // Calculate the average rating
+        const reviews = fetchedProduct.reviews || []; // Ensure reviews is always an array
+        const averageRating =
+          reviews.length > 0
+            ? reviews.reduce((sum, review) => sum + review.rating, 0) /
+              reviews.length
+            : 0;
+
+        // Set the state with the updated data
+        setProduct({
+          ...fetchedProduct,
+          sliderContent,
+          reviews,
+          averageRating: averageRating.toFixed(1), // Round to 1 decimal place
+        });
+
+        if (fetchedProduct.colors?.length > 0) {
+          setSelectedColor(fetchedProduct.colors[0]);
+          setSelectedImage(fetchedProduct.colors[0].image);
+        }
       }
+    } catch (error) {
+      console.error("Error fetching product details:", error);
+    } finally {
+      setLoading(false);
+      setProductLoaded(true); // Set to true once the product is fetched
     }
+  };
+  useEffect(() => {
+    fetchProductDetails(); // Only runs when `id` changes
   }, [id]);
 
-  // Handle adding a new review
-  const handleAddReview = () => {
-    if (newReview.name && newReview.comment && newReview.rating) {
-      setProduct((prevProduct) => {
-        return {
-          ...prevProduct,
-          reviews: [
-            ...prevProduct.reviews,
-            { ...newReview, id: prevProduct.reviews.length + 1 },
-          ],
-        };
-      });
-      setNewReview({ name: "", comment: "", rating: 0 });
-      setShowAddReview(false);
-    } else {
-      alert("Please fill out all fields");
-    }
-  };
-
-  const handleBackToProducts = () => {
-    navigate("/products"); // Navigate to the products listing page
-  };
-
-  // Handlers for Slider Navigation
-  const handleNext = () => {
-    if (product?.images?.length > 0) {
-      setCurrentImageIndex((prev) =>
-        prev === product.images.length - 1 ? 0 : prev + 1
-      );
-    }
-  };
-
-  const handlePrev = () => {
-    if (product?.images?.length > 0) {
-      setCurrentImageIndex((prev) =>
-        prev === 0 ? product.images.length - 1 : prev - 1
-      );
-    }
-  };
-
-  if (!product) {
-    return <p className="text-center text-gray-500">Loading product...</p>;
-  }
-
+  // Add product to cart
   const handleAddToCart = () => {
-    if (product.availableCount === 0) {
+    if (!product || product.availableCount === 0) {
       alert("Product is out of stock!");
       return;
     }
@@ -156,293 +106,310 @@ const ProductDetailComponent = () => {
     const cartItem = {
       id: product.id,
       name: product.name,
-      price: product.price, 
+      price: product.price,
       color: selectedColor?.color || null,
-      size: selectedSize || null,
       image: selectedColor?.image || null,
       quantity: 1,
       availableCount: product.availableCount,
-      offer: product.offer, 
+      offer: product.offer,
     };
 
-    addToCart(cartItem); // Add item to the global cart
+    addToCart(cartItem);
     alert("Item added to cart!");
   };
 
+  // Add review mutation
+  const handleAddReview = async () => {
+    const REVIEW_MUTATION = `
+      mutation AddReview($input: ReviewInput!) {
+        addReview(input: $input) {
+          id
+          name
+          comment
+          rating
+          createdAt
+        }
+      }
+    `;
+
+    const userName = localStorage.getItem("userName") || "Unnamed User";
+
+    try {
+      const input = {
+        productId: id, // Ensure this is the correct product ID
+        name: userName,
+        comment: newReview.comment,
+        rating: newReview.rating,
+      };
+
+      const response = await graphQLCommand(REVIEW_MUTATION, { input });
+
+      if (response.addReview) {
+        // Refetch product details to get the latest reviews and rating
+        await fetchProductDetails();
+
+        setNewReview({ comment: "", rating: 0 });
+        setShowAddReview(false);
+      }
+    } catch (error) {
+      console.error("Error adding review:", error);
+    }
+  };
+
+  if (loading) {
+    return <p className="text-center text-gray-500">Loading product...</p>;
+  }
+
+  if (!product) {
+    return <p className="text-center text-red-500">Product not found!</p>;
+  }
+
   return (
-    <div className="ProductDetail bg-gradient-to-t from-gray-50 to-yellow-100">
+    <div className="product">
       <NavBar />
-      <div className="w-full flex flex-col items-center">
-        {/* Slider and Video Section */}
-        <section className="w-11/12 flex flex-col lg:flex-row gap-6 mb-8 mt-4">
-          {/* Manual Slider Section */}
-          <div className="w-full lg:w-1/2 relative shadow-xl">
-            {product.images?.length > 0 ? (
-              <>
-                <div className="relative">
-                  <img
-                    src={product.images[currentImageIndex]}
-                    alt={`Product view ${currentImageIndex + 1}`}
-                    className="w-full h-[400px] object-cover rounded-md"
-                  />
+      <div className="ProductDetail bg-gradient-to-t from-gray-50 to-yellow-100 min-h-screen py-8 px-8">
+        <div className="flex flex-col lg:flex-row gap-4 px-4 lg:px-8">
+          <div className="w-full  bg-gradient-to-r from-purple-50 to-purple-100 border border-gray-300 rounded-lg shadow-md border border-gray-500 p-6 max-w-full">
+            <h1 className="text-3xl font-bold text-blue-800 uppercase mb-4">
+              {product.name}
+            </h1>
+            <div className="flex flex-col lg:flex-row justify-between">
+              <div className="w-full lg:w-[40%]">
+                <div className="text-xl font-bold text-red-500">
+                  
+                  <span>₹{product.price}</span>
                 </div>
-
-                {/* Navigation Arrows */}
-                <button
-                  onClick={handlePrev}
-                  className="absolute left-2 top-1/2 transform -translate-y-1/2 text-white text-2xl px-2 py-1 bg-black bg-opacity-50 rounded-full"
-                >
-                  ⬅
-                </button>
-                <button
-                  onClick={handleNext}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-white text-2xl px-2 py-1 bg-black bg-opacity-50 rounded-full"
-                >
-                  ➡
-                </button>
-              </>
-            ) : (
-              <p className="text-gray-500 text-center">No images available</p>
-            )}
-          </div>
-
-          {/* Video Section */}
-          <div className="w-full lg:w-1/2 flex items-center justify-center relative shadow-xl">
-            {product.video ? (
-              <video
-                src={product.video}
-                controls
-                className="w-full h-[400px] object-cover rounded-md shadow-md"
-              />
-            ) : (
-              <p className="text-gray-500 text-center">No video available</p>
-            )}
-          </div>
-        </section>
-
-        <div className="w-full grid grid-cols-1 lg:grid-cols-5 gap-6 px-4">
-          <div className="lg:col-span-2 px-6 py-8 rounded-lg shadow-md flex flex-col lg:flex-row space-y-6 lg:space-y-0 border border-gray-300 hover:shadow-xl bg-gradient-to-r from-blue-100 to-blue-50">
-            {/* Left: Product Details */}
-            <div className="space-y-4 flex-1 lg:pr-4">
-              <h1 className="text-3xl font-bold text-blue-800 uppercase">
-                {product.name}
-              </h1>
-
-              {/* Display Original and Discounted Price */}
-              <div className="text-xl font-bold text-red-500">
-                <span className="text-red-800 mr-2">₹{product.price}</span>
-              </div>
-
-              {/* Available Count */}
-              {product.availableCount !== undefined && (
-                <p className="text-lg text-green-500 font-semibold">
+                {product.offer && (
+                  <p className="text-sm text-gray-700 bg-yellow-200 px-2 py-1 rounded-md inline-block mt-2">
+                    {product.offer}% OFF
+                  </p>
+                )}
+                <p className="mt-4 text-lg text-green-500 font-semibold">
                   {product.availableCount > 0
                     ? `${product.availableCount} in stock`
                     : "Out of stock"}
                 </p>
-              )}
-
-              {product.offer && (
-                <p className="text-sm text-gray-700 bg-yellow-200 inline-block px-2 py-1 rounded-md w-fit">
-                  {product.offer}
-                </p>
-              )}
-
-              {/* Color Selection */}
-              {product.colors && product.colors.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    Select Color:
-                  </h3>
-                  <div className="flex space-x-4 mt-2">
-                    {product.colors.map((color, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setSelectedColor(color)}
-                        className={`w-8 h-8 rounded-full border-2 ${
-                          selectedColor?.color === color.color
-                            ? "border-blue-500"
-                            : "border-gray-300"
-                        }`}
-                        style={{
-                          backgroundColor: color.color.toLowerCase(),
-                        }}
-                        aria-label={color.color}
-                      ></button>
-                    ))}
+                {product.colors?.length > 0 && (
+                  <div className="mt-4">
+                    <h3 className="text-lg font-semibold">Select Color:</h3>
+                    <div className="flex space-x-4 mt-2">
+                      {product.colors.map((color, index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            setSelectedColor(color);
+                            setSelectedImage(color.image);
+                          }}
+                          className={`w-12 h-12 rounded-full border-4 ${
+                            selectedColor?.color === color.color
+                              ? "border-blue-500"
+                              : "border-gray-300"
+                          }`}
+                          style={{ backgroundColor: color.color.toLowerCase() }}
+                          aria-label={color.color}
+                        ></button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {/* Size Selection */}
-              {product.sizes && product.sizes.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    Select Size:
-                  </h3>
-                  <div className="flex space-x-4 mt-2">
-                    {product.sizes.map((size, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setSelectedSize(size)}
-                        className={`px-4 py-2 rounded-md border-2 ${
-                          selectedSize === size
-                            ? "border-blue-500 bg-blue-100"
-                            : "border-gray-300"
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Add to Cart Button */}
-              <div className="mt-6 flex space-x-4">
-                <button
-                  className="w-40 bg-gray-500 text-white text-lg font-semibold py-2 px-2 rounded-md hover:bg-gray-600 transition"
-                  onClick={handleBackToProducts}
-                >
-                  Back to Products
-                </button>
-                <button
-                  className="w-32 bg-green-500 text-white text-lg font-semibold py-2 rounded-md hover:bg-green-600 transition"
-                  onClick={handleAddToCart}
-                >
-                  Add to Cart
-                </button>
-              </div>
-            </div>
-
-            {/* Right Image - Now it comes below the product details on mobile */}
-            {selectedColor?.image && (
-              <img
-                src={selectedColor.image}
-                alt={`${selectedColor.color} view`}
-                className="w-full lg:w-1/2 md:w-1/2 h-auto object-cover rounded-md shadow-md mt-6 lg:mt-0 md:mt-0"
-              />
-            )}
-          </div>
-
-          {/* Right: Description and Features */}
-          <div className="lg:col-span-3 bg-gradient-to-r from-blue-100 to-blue-50 px-6 py-8 rounded-lg shadow-md flex flex-col space-y-4 border border-gray-300 hover:shadow-xl">
-            <h2 className="text-2xl font-bold text-blue-700">Description</h2>
-            <p className="text-gray-700 text-black">{product.description}</p>
-
-            {product.features && (
-              <>
-                <h2 className="text-2xl font-bold text-gray-800 mt-4">
-                  Features
-                </h2>
-                <ul className="list-disc list-inside space-y-2 text-gray-700">
-                  {product.features.map((feature, index) => (
-                    <li key={index}>{feature}</li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-      {/* Review Section */}
-      <div className="sm:w-[96%] md:w-[96%] lg:w-[96%] m-8 p-4 border border-gray-300 rounded-md hover:shadow-xl bg-gradient-to-r from-blue-100 to-blue-50 text-left">
-        <div className="flex justify-between items-center mb-2">
-          <h2 className="text-xl font-bold text-gray-800">Reviews</h2>
-          <button
-            className="w-32 bg-gray-500 text-white text-sm font-semibold py-1 px-3 rounded-md hover:bg-gray-600 transition mt-2 sm:mt-4"
-            onClick={() => setShowAddReview(true)}
-          >
-            Add Review
-          </button>
-        </div>
-
-        {product.reviews?.length > 0 ? (
-          product.reviews.slice(0, visibleReviews).map((review) => (
-            <div key={review.id} className="mt-2">
-              <h3 className="text-lg font-semibold text-gray-800">
-                {review.name}
-              </h3>
-              <p className="text-gray-600">{review.comment}</p>
-              <span className="text-yellow-500">Rating: {review.rating}★</span>
-            </div>
-          ))
-        ) : (
-          <p className="text-gray-500">
-            No reviews available for this product.
-          </p>
-        )}
-
-        {visibleReviews < product.reviews?.length && (
-          <div className="text-center mt-2">
-            <button
-              className="bg-gray-200 text-gray-700 px-4 py-1 rounded-md hover:bg-gray-300"
-              onClick={() => setVisibleReviews((prev) => prev + 2)}
-            >
-              View More
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Add Review Modal */}
-      {showAddReview && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg space-x-4">
-            <h2 className="text-xl font-bold mb-4">Add Review</h2>
-            <input
-              type="text"
-              placeholder="Your Name"
-              value={newReview.name}
-              onChange={(e) =>
-                setNewReview({ ...newReview, name: e.target.value })
-              }
-              className="w-full mb-4 p-2 border border-gray-300 rounded-md"
-            />
-            <textarea
-              placeholder="Your Comment"
-              value={newReview.comment}
-              onChange={(e) =>
-                setNewReview({ ...newReview, comment: e.target.value })
-              }
-              className="w-full mb-4 p-2 border border-gray-300 rounded-md"
-            ></textarea>
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold mb-2">Rating:</h3>
-              <div className="flex space-x-2">
-                {[1, 2, 3, 4, 5].map((star) => (
+                )}
+                <div className="mt-6">
                   <button
-                    key={star}
-                    onClick={() => setNewReview({ ...newReview, rating: star })}
-                    className={`text-2xl ${
-                      newReview.rating >= star
-                        ? "text-yellow-500"
-                        : "text-gray-400"
-                    }`}
-                    aria-label={`${star} Star`}
+                    className="bg-gray-500 text-white text-lg py-2 px-4 rounded-md hover:bg-gray-600 mr-4 my-2"
+                    onClick={() => navigate("/products/All")}
                   >
-                    ★
+                    Back to Products
                   </button>
-                ))}
+                  <button
+                    className="bg-green-500 text-white text-lg py-2 px-4 rounded-md hover:bg-green-600"
+                    onClick={handleAddToCart}
+                  >
+                    Add to Cart
+                  </button>
+                </div>
+              </div>
+              <div className="w-full lg:w-[30%] flex justify-center items-center mt-4 me-64">
+                <img
+                  src={selectedImage || product.sliderImages[0]}
+                  alt="Selected product view"
+                  className="w-full h-[300px] object-cover"
+                />
               </div>
             </div>
-            <div className="flex justify-end space-x-4">
+          </div>
+        
+        </div>
+
+        {/* Product Details */}
+        <div className="flex flex-col lg:flex-row gap-4 px-4 lg:px-8 mt-8">
+          {/* Left Section: Description */}
+          <div className="w-full lg:w-[30%] bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-lg shadow-md border border-gray-500">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              Description
+            </h2>
+            <p className="text-gray-700 mb-6">{product.description}</p>
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Features</h2>
+            <ul className="list-disc list-inside text-gray-700">
+              {product.features.map((feature, index) => (
+                <li key={index}>{feature}</li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Middle Section: Slider */}
+          <div className="w-full lg:w-[30%] bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-lg shadow-md border border-gray-500">
+            <div className="text-black font-bold text-2xl pb-2">More Views</div>
+            <div className="relative overflow-hidden rounded-lg shadow-md">
+              {/* Slider Container */}
+              {product.sliderContent.map((content, index) => (
+                <div
+                  key={index}
+                  className={`w-full h-[250px] sm:h-[350px] lg:h-[450px] transition-all duration-500 ease-in-out ${
+                    activeIndex === index ? "block" : "hidden"
+                  }`}
+                >
+                  {content.endsWith(".mp4") ? (
+                    <video
+                      src={content}
+                      controls
+                      className="w-full h-full object-cover rounded-md"
+                    />
+                  ) : (
+                    <img
+                      src={content}
+                      alt={`Slide ${index + 1}`}
+                      className="w-full h-full object-cover rounded-md"
+                    />
+                  )}
+                </div>
+              ))}
+
+              {/* Navigation Arrows */}
               <button
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
-                onClick={() => setShowAddReview(false)}
+                className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-blue-500 text-white rounded-full p-2 hover:bg-blue-600 shadow-md z-10"
+                onClick={() =>
+                  setActiveIndex((prevIndex) =>
+                    prevIndex === 0
+                      ? product.sliderContent.length - 1
+                      : prevIndex - 1
+                  )
+                }
               >
-                Cancel
+                &#8249;
               </button>
+              <button
+                className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-blue-500 text-white rounded-full p-2 hover:bg-blue-600 shadow-md z-10"
+                onClick={() =>
+                  setActiveIndex((prevIndex) =>
+                    prevIndex === product.sliderContent.length - 1
+                      ? 0
+                      : prevIndex + 1
+                  )
+                }
+              >
+                &#8250;
+              </button>
+            </div>
+
+            {/* Indicator Dots */}
+            <div className="flex justify-center mt-4">
+              {product.sliderContent.map((_, idx) => (
+                <span
+                  key={idx}
+                  className={`w-3 h-3 mx-1 rounded-full cursor-pointer ${
+                    idx === activeIndex
+                      ? "bg-blue-500"
+                      : "bg-gray-300 hover:bg-blue-400"
+                  }`}
+                  onClick={() => setActiveIndex(idx)}
+                ></span>
+              ))}
+            </div>
+          </div>
+
+         
+          {/* Right Section: Reviews */}
+          <div className="w-full lg:w-[40%] px-6 py-8 bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-lg shadow-md border border-gray-500">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-800">Reviews</h2>
               <button
                 className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-                onClick={handleAddReview}
+                onClick={() => setShowAddReview(true)}
               >
-                Submit
+                Add Review
               </button>
             </div>
+            <div className="mt-4 text-xl text-center font-bold text-gray-800 p-2 rounded-md">
+              Overall Rating: {product.averageRating}
+            </div>
+            {product.reviews.slice(0, reviewsToShow).map((review, index) => (
+              <div key={index} className="mt-4">
+                <h3 className="text-lg font-semibold">{review.name}</h3>
+                <p className="text-gray-700">{review.comment}</p>
+                <span className="text-yellow-500">
+                  Rating: {review.rating}★
+                </span>
+              </div>
+            ))}
+            {product.reviews.length > reviewsToShow && (
+              <button
+                className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                onClick={() => setReviewsToShow((prev) => prev + 5)}
+              >
+                View More Reviews
+              </button>
+            )}
+            {/* Add Review Modal */}
+            {showAddReview && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg shadow-lg p-6 w-[90%] max-w-[500px]">
+                  <h3 className="text-lg font-bold text-gray-800 mb-4">
+                    Add Review
+                  </h3>
+                  <textarea
+                    className="w-full p-2 border rounded-md mb-4"
+                    placeholder="Write your review..."
+                    value={newReview.comment}
+                    onChange={(e) =>
+                      setNewReview({ ...newReview, comment: e.target.value })
+                    }
+                  />
+                  <input
+                    type="number"
+                    max="5"
+                    min="1"
+                    className="w-full p-2 border rounded-md mb-4"
+                    placeholder="Rating (1-5)"
+                    value={newReview.rating}
+                    onChange={(e) =>
+                      setNewReview({
+                        ...newReview,
+                        rating: Number(e.target.value),
+                      })
+                    }
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 mr-2"
+                      onClick={() => setShowAddReview(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+                      onClick={handleAddReview}
+                    >
+                      Submit
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      )}
+        <div className="relatedProducts">
+
+        </div>
+      </div>
     </div>
   );
 };

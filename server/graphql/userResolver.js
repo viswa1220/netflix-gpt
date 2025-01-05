@@ -1,10 +1,10 @@
 const bcrypt = require("bcrypt");
 const User = require("../models/User");
 
-const resolvers = {
+const userResolver = {
   Query: {
     users: async () => {
-      return await User.find(); // Fetch all users
+      return await User.find();
     },
   },
   Mutation: {
@@ -15,12 +15,17 @@ const resolvers = {
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
-      const newUser = new User({ fullName, userId, email, password: hashedPassword, address });
+      const newUser = new User({
+        fullName,
+        userId,
+        email,
+        password: hashedPassword,
+        address,
+      });
 
       const savedUser = await newUser.save();
       return { message: "User created successfully", user: savedUser };
     },
-
     login: async (_, { email, password }) => {
       const user = await User.findOne({ email });
       if (!user) {
@@ -34,10 +39,15 @@ const resolvers = {
 
       return {
         message: "Login successful",
-        user: { id: user.id, fullName: user.fullName, email: user.email, address: user.address },
+        user: {
+          id: user.id,
+          fullName: user.fullName,
+          email: user.email,
+          address: user.address,
+        },
       };
     },
   },
 };
 
-module.exports = resolvers;
+module.exports = userResolver;
