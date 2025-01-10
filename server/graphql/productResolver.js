@@ -31,7 +31,14 @@ const productResolver = {
     },
     getAllProducts: async () => {
       try {
-        const products = await Product.find().populate("productCategory");
+        // Fetch products and populate both 'productCategory' and 'reviews'
+        const products = await Product.find()
+          .populate("productCategory") 
+          .populate({
+            path: "reviews", 
+            select: "rating comment", 
+          });
+
         if (!products || products.length === 0) {
           console.log("No products found in the database.");
         }
@@ -64,7 +71,7 @@ const productResolver = {
         const products = await Product.find({
           productCategory: category._id,
         }).populate("productCategory");
-        console.log(`Fetched products for category "${name}":`, products); 
+        console.log(`Fetched products for category "${name}":`, products);
         return products;
       } catch (error) {
         console.error("Error fetching products by category name:", error);
@@ -105,11 +112,13 @@ const productResolver = {
       try {
         if (name === "All") {
           const products = await Product.find().populate("productCategory");
-    
+
           // Fetch reviews for each product and include them
           const productsWithReviews = await Promise.all(
             products.map(async (product) => {
-              const reviews = await Review.find({ productId: product._id }).sort({
+              const reviews = await Review.find({
+                productId: product._id,
+              }).sort({
                 createdAt: -1,
               });
               return {
@@ -128,20 +137,20 @@ const productResolver = {
               };
             })
           );
-    
+
           return productsWithReviews;
         }
-    
+
         const category = await Category.findOne({ name });
         if (!category) {
           console.error(`Category "${name}" not found`);
           throw new Error("Category not found");
         }
-    
+
         const products = await Product.find({
           productCategory: category._id,
         }).populate("productCategory");
-    
+
         // Fetch reviews for each product and include them
         const productsWithReviews = await Promise.all(
           products.map(async (product) => {
@@ -164,59 +173,63 @@ const productResolver = {
             };
           })
         );
-    
-        console.log(`Fetched products for category "${name}":`, productsWithReviews);
+
+        console.log(
+          `Fetched products for category "${name}":`,
+          productsWithReviews
+        );
         return productsWithReviews;
       } catch (error) {
         console.error("Error fetching products by category name:", error);
         throw new Error("Failed to fetch products by category");
       }
     },
-    
   },
 
   Mutation: {
     // Add a new product
-  addProduct: async (_, { input }) => {
-  try {
-    const { name, price, productCategory } = input;
+    addProduct: async (_, { input }) => {
+      try {
+        const { name, price, productCategory,description } = input;
 
-    // Validate required fields
-    if (!name || !price || !productCategory) {
-      throw new Error("Missing required fields: name, price, or productCategory.");
-    }
+        // Validate required fields
+        if (!name || !price || !productCategory) {
+          throw new Error(
+            "Missing required fields: name, price, or productCategory."
+          );
+        }
 
-    // Validate that the category exists
-    const categoryExists = await Category.findById(productCategory);
-    if (!categoryExists) {
-      throw new Error("Invalid productCategory: Category does not exist.");
-    }
+        // Validate that the category exists
+        const categoryExists = await Category.findById(productCategory);
+        if (!categoryExists) {
+          throw new Error("Invalid productCategory: Category does not exist.");
+        }
 
-    // Prepare product data
-    const productData = {
-      ...input,
-      productCategory: categoryExists._id, // Make sure you're saving the correct category _id
-      mainImage: input.mainImage || "",
-      sliderImages: input.sliderImages || [],
-      video: input.video || "",
-    };
+        // Prepare product data
+        const productData = {
+          ...input,
+          productCategory: categoryExists._id,
+          description: description ? description : "", // Make sure you're saving the correct category _id
+          mainImage: input.mainImage || "",
+          sliderImages: input.sliderImages || [],
+          video: input.video || "",
+        };
 
-    // Save the new product
-    const newProduct = new Product(productData);
-    const savedProduct = await newProduct.save();
+        // Save the new product
+        const newProduct = new Product(productData);
+        const savedProduct = await newProduct.save();
 
-    // Format the result object
-    const resultObj = savedProduct.toObject();
-    resultObj.id = savedProduct._id.toString(); // Convert _id to id
+        // Format the result object
+        const resultObj = savedProduct.toObject();
+        resultObj.id = savedProduct._id.toString(); // Convert _id to id
 
-    // Return the formatted product result
-    return resultObj;
-  } catch (error) {
-    console.error("Error adding product:", error);
-    throw new Error("Failed to add product.");
-  }
-},
-
+        // Return the formatted product result
+        return resultObj;
+      } catch (error) {
+        console.error("Error adding product:", error);
+        throw new Error("Failed to add product.");
+      }
+    },
 
     // Update a product
     updateProduct: async (_, { id, input }) => {

@@ -2,38 +2,38 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import Slider from "react-slick";
 
-// Import Slick Carousel default styles
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-
 const sliderItems = [
   {
-    name: "Airpods",
-    img: "airpod.png",
+    category: "Creativity",
+    headline: "Take your inner artist out and about.",
+    image: "/airpod.png",
   },
   {
-    name: "Smart Watch",
-    img: "smartwatch.png",
+    category: "Learning",
+    headline: "Your classroom can be anywhere.",
+    image: "/smartwatch.png",
   },
   {
-    name: "Headphones",
-    img: "headphones.png",
+    category: "Entertainment",
+    headline: "Kick back. Tune in. Game on.",
+    image: "/headphones.png",
   },
   {
-    name: "Combos",
-    img: "combos.png",
+    category: "Combos",
+    headline: "Everything in one place, unbeatable deals.",
+    image: "/combos.png",
   },
   {
-    name: "shoes",
-    img: "shoes.png",
+    category: "Shoes",
+    headline: "Step up your style wherever you go.",
+    image: "/shoes.png",
   },
   {
-    name: "Covers & Straps",
-    img: "cs.png",
-  },
-  {
-    name: "Analog Watches",
-    img: "analog.png",
+    category: "Covers & Straps",
+    headline: "Protection meets fashion for every device.",
+    image: "/cs.png",
   },
 ];
 
@@ -42,7 +42,9 @@ const NextArrow = (props) => {
   const { onClick } = props;
   return (
     <div
-      className="absolute right-0 z-10 flex items-center justify-center w-8 h-8 -mr-4 text-white bg-gray-800 rounded-full cursor-pointer top-1/2 transform -translate-y-1/2 hover:bg-gray-700"
+      className="absolute right-0 z-10 flex items-center justify-center w-8 h-8 -mr-4 
+                 text-white bg-gray-800 rounded-full cursor-pointer 
+                 top-1/2 transform -translate-y-1/2 hover:bg-gray-700"
       onClick={onClick}
     >
       <svg
@@ -62,7 +64,9 @@ const PrevArrow = (props) => {
   const { onClick } = props;
   return (
     <div
-      className="absolute left-0 z-10 flex items-center justify-center w-8 h-8 -ml-4 text-white bg-gray-800 rounded-full cursor-pointer top-1/2 transform -translate-y-1/2 hover:bg-gray-700"
+      className="absolute left-0 z-10 flex items-center justify-center w-8 h-8 -ml-4 
+                 text-white bg-gray-800 rounded-full cursor-pointer 
+                 top-1/2 transform -translate-y-1/2 hover:bg-gray-700"
       onClick={onClick}
     >
       <svg
@@ -85,36 +89,30 @@ const PrevArrow = (props) => {
 const SliderComponent = () => {
   const navigate = useNavigate();
 
-  // Slider settings for react-slick
+  // react-slick settings
   const settings = {
     dots: false,
     infinite: true,
-    speed: 500,
-    slidesToShow: 6, // show 6 items at once on large screens
+    speed: 600,
+    slidesToShow: 4,
     slidesToScroll: 1,
     nextArrow: <NextArrow />,
     prevArrow: <PrevArrow />,
     responsive: [
       {
-        breakpoint: 1024, // screen < 1024px
-        settings: {
-          slidesToShow: 4,
-        },
-      },
-      {
-        breakpoint: 768, // screen < 768px
+        breakpoint: 1024, // < 1024px
         settings: {
           slidesToShow: 3,
         },
       },
       {
-        breakpoint: 640, // screen < 640px
+        breakpoint: 768, // < 768px
         settings: {
-          slidesToShow: 2,
+          slidesToShow: 1,
         },
       },
       {
-        breakpoint: 480, // screen < 480px
+        breakpoint: 480, // < 480px
         settings: {
           slidesToShow: 1,
         },
@@ -122,43 +120,105 @@ const SliderComponent = () => {
     ],
   };
 
-  // Clicking an item -> navigate to /products/<categoryName>
+  // Handle card click
   const handleClick = (categoryName) => {
-    
+    // Example: navigate to a specific route or do something else
     navigate(`/category/${categoryName}`);
   };
 
   return (
-    <div className="bg-white">
-      {/* Title */}
+    <div className="w-full bg-white">
+      {/* Optional Title */}
       <div className="text-center py-8">
         <h2 className="text-2xl font-bold text-gray-800">
-          What Tech Are You Exploring Today?
+          Explore More Categories
         </h2>
       </div>
 
-      {/* Slider Container */}
       <div className="relative px-8 md:px-16 lg:px-24 xl:px-32 pb-8">
         <Slider {...settings}>
-          {sliderItems.map((item) => (
-            <div key={item.name} className="px-2">
+          {sliderItems.map((item, idx) => (
+            <div key={idx} className="px-2">
               <div
-                className="flex flex-col items-center cursor-pointer"
-                onClick={() => handleClick(item.name)}
+                className="
+                 relative
+w-full
+h-[480px]        
+rounded-xl       
+overflow-hidden 
+cursor-pointer 
+   bg-gradient-to-t
+from-black/90    
+via-black/50     
+to-transparent   
+
+                  
+                "
+                onClick={() => handleClick(item.category)}
               >
-                {/* Circle background */}
-                <div className="rounded-full w-32 h-32 overflow-hidden bg-blue-100">
-                  <img
-                    src={item.img}
-                    alt={item.name}
-                    className="w-full h-full object-cover"
-                  />
+                {/* Background Image */}
+                <img
+                  src={item.image}
+                  alt={item.headline}
+                  className="
+                    absolute 
+                    inset-0 
+                    w-full 
+                    h-full 
+                    object-cover
+                  "
+                />
+
+                <div
+                  className="
+      absolute
+      inset-0
+      bg-gradient-to-b
+      from-black/90
+      via-black/5
+      to-transparent
+    "
+                ></div>
+                {/* Top Text */}
+                <div
+                  className="
+    absolute 
+    top-4 
+    left-4 
+    text-white
+    /* semi-transparent dark background */
+    px-2
+    py-1
+    rounded-md
+    
+  "
+                >
+                  <p className="text-xs uppercase font-semibold opacity-90">
+                    {item.category}
+                  </p>
+                  <h3 className="text-xl md:text-2xl font-bold leading-tight mt-1">
+                    {item.headline}
+                  </h3>
                 </div>
 
-                {/* Item name */}
-                <p className="text-sm font-medium text-gray-700 text-center mt-2">
-                  {item.name}
-                </p>
+                {/* Bottom Right + Button (Optional) */}
+                <button
+                  className="
+                    absolute 
+                    bottom-4 
+                    right-4
+                    w-8 
+                    h-8 
+                    bg-black/50 
+                    text-white 
+                    rounded-full 
+                    flex 
+                    items-center 
+                    justify-center
+                  "
+                >
+                  <span className="text-xl font-bold">+</span>
+                </button>
               </div>
             </div>
           ))}

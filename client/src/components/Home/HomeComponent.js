@@ -1,266 +1,352 @@
-import React from "react";
-import SliderComponent from "../SliderComponent/SliderComponent";
-import TrendingProductsSection from "../TrendingProductsSection/TrendingProductsSection";
+import React, { useState, useEffect } from "react";
 import NavBar from "../NavBar/NavBar";
-const products = [
-  {
-    id: 1,
-    title: "Airpods Pro Black Mastercopy",
-    image: "airpodblack.png",
-    oldPrice: "₹2,000.00",
-    newPrice: "₹1,600.00",
-    rating: 4.5,
-  },
-  {
-    id: 2,
-    title: "Ultra Watch Gold 49mm",
-    image: "analogwatch1.png",
-    oldPrice: "₹3,000.00",
-    newPrice: "₹2,200.00",
-    rating: 4,
-  },
-  {
-    id: 3,
-    title: "Silicone case for Airpods Pro 2nd Generation",
-    image: "airpodwhite.png",
-    oldPrice: "",
-    newPrice: "₹120.00",
-    rating: 4,
-  },
-  {
-    id: 4,
-    title: "Apple Ultra 2 Smartwatch Copy",
-    image: "smartwatchpro2.png",
-    oldPrice: "",
-    newPrice: "₹2,900.00",
-    rating: 4.2,
-  },
-  {
-    id: 5,
-    title: "Sketchers",
-    image: "sketchers.png",
-    oldPrice: "",
-    newPrice: "₹2,900.00",
-    rating: 4.2,
-  },
-  {
-    id: 6,
-    title: "Shoes",
-    image: "shoes2.png",
-    oldPrice: "",
-    newPrice: "₹2,900.00",
-    rating: 4.2,
-  },
-];
+import RecommendationSection from "../RecommendationSection/RecommendationSection";
+import Testimonial from "../Testimonial/Testimonial";
+import { graphQLCommand } from "../../util";
+import SliderComponent from "../SliderComponent/SliderComponent";
+import { useNavigate } from "react-router-dom";
 
 const HomeComponent = () => {
+  const [products, setProducts] = useState([]);
+  const [recProducts, setRecProducts] = useState([]);
+  const navigate = useNavigate();
+
+  // 1. Slider Data: Replace these slides with your own images & text
+  const slides = [
+    {
+      id: 1,
+      image: "hero_image.png", // Example image; replace with your path
+      headline: "FREE Galaxy S22",
+      subHeadline: "with our 50GB Airtime Plan.",
+      description:
+        "All credit types welcome\n*Handset loaned at no additional cost",
+      buttonText: "Browse Our Plans",
+    },
+    {
+      id: 2,
+      image: "hero_home.png", // Or another image
+      headline: "Welcome to Scroll And Shop",
+      subHeadline: "Discover Our Latest Tech & Accessories",
+      description:
+        "From headphones and smartwatches to covers, straps, and chargers—\nwe have everything you need for your digital lifestyle.",
+      buttonText: "Shop Now",
+    },
+  ];
+
+  // 2. Slider State & Handlers
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const slideCount = slides.length;
+
+  // Optional: Auto-slide every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      goToNext();
+    }, 5000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line
+  }, [currentSlide]);
+
+  const goToNext = () => {
+    setCurrentSlide((prev) => (prev === slideCount - 1 ? 0 : prev + 1));
+  };
+
+  const goToPrev = () => {
+    setCurrentSlide((prev) => (prev === 0 ? slideCount - 1 : prev - 1));
+  };
+
+  // 3. Fetch Product Details (existing logic)
+  const fetchProductDetails = async () => {
+    const query = `
+      query {
+        getAllProducts {
+          id
+          mainImage
+          name
+          price
+          trendingStatus
+          description
+          saleStatus
+          rating
+          productCategory {
+            name
+          }
+        }
+      }
+    `;
+    const response = await graphQLCommand(query);
+    setRecProducts(response.getAllProducts);
+
+    const saleProducts = response.getAllProducts.filter(
+      (product) => product.saleStatus
+    );
+    setProducts(saleProducts);
+  };
+
+  useEffect(() => {
+    fetchProductDetails();
+    // eslint-disable-next-line
+  }, []);
+
   return (
-    <div className="font-sans">
-      <NavBar/>
-      {/* Hero Section */}
-      <section className="bg-yellow-400 py-8 px-4 md:px-8">
-        {/* 
-       
-      */}
-        <div className="flex flex-col md:flex-row items-center justify-between">
-          {/* Left: Text Content */}
-          <div className="md:w-1/2 mb-6 md:mb-0 md:pr-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-black mb-4">
-              Welcome to Scroll And Shop
-            </h1>
-            <h1 className="text-2xl md:text-2xl font-bold text-black mb-4">
-              Discover Our Latest Tech & Accessories
-            </h1>
-            <p className="text-lg text-gray-800 mb-6 leading-relaxed text-white">
-              From headphones and smartwatches to covers, straps, and chargers—
-              we have everything you need for your digital lifestyle. Enjoy top
-              brands, budget-friendly combos, and exclusive offers.
-            </p>
-            <a
-              href="/shop"
-              className="inline-block bg-black text-white px-6 py-2 rounded-md hover:bg-gray-900 transition"
-            >
-              Shop Now
-            </a>
-          </div>
+    <div className="font-sans text-[#FFD65A]">
+      <NavBar />
 
-          {/* Right: Image */}
-          <div className="md:w-1/2 flex justify-center ">
-            <img
-              src="hero_home.jpg"
-              alt="Hero showcasing products"
-              className="max-w-sm w-full h-auto object-contain"
-            />
-          </div>
-        </div>
-      </section>
-      {/* Slider Section */}
-      <SliderComponent />
+      {/* 4. Integrated Slider Section (Hero) */}
+      <section className="relative w-full min-h-[55vh] bg-primaryBlack overflow-hidden">
+        {/* Slides Wrapper (horizontal slide) */}
+        <div
+          className="flex transition-transform duration-700 ease-in-out"
+          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+        >
+          {slides.map((slide, index) => {
+            const isActive = currentSlide === index;
+            return (
+              <div
+                key={slide.id}
+                className="flex-shrink-0 w-full h-full flex items-center justify-center px-4 md:px-8"
+                style={{ minWidth: "100%", minHeight: "55vh" }}
+              >
+                {/* Slide Content */}
+                <div className="flex flex-col-reverse md:flex-row items-center justify-between w-full max-w-6xl mx-auto">
+                  {/* Left: Text */}
+                  <div className="md:w-1/2 mt-8 md:mt-0 text-center md:text-left">
+                    <h2 className="text-yellow-400 text-3xl md:text-4xl font-bold mb-2">
+                      {slide.headline}
+                    </h2>
+                    <h3 className="text-white text-xl md:text-2xl font-semibold mb-4">
+                      {slide.subHeadline}
+                    </h3>
+                    <p className="text-gray-300 text-base md:text-lg whitespace-pre-line mb-6">
+                      {slide.description}
+                    </p>
+                    <button className="inline-flex items-center bg-yellow-400 text-black py-2 px-4 rounded-full font-semibold hover:bg-yellow-300 transition">
+                      {slide.buttonText}
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth="2"
+                        stroke="currentColor"
+                        className="ml-2 w-4 h-4"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M13.5 4.5l6 6m0 0-6 6m6-6H4.5"
+                        />
+                      </svg>
+                    </button>
+                  </div>
 
-      
-      <div className="py-12 px-8 ">
-        <h2 className="text-3xl font-semibold text-center mb-8">
-          Explore Categories
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {[
-            {
-              title: "Men's Collection",
-              description: "Shoes, gadgets, and more for men.",
-              img: "mens.png",
-            },
-            {
-              title: "Women's Collection",
-              description: "Style and gadgets for women.",
-              img: "womens.png",
-            },
-            {
-              title: "Kids' Collection",
-              description: "Style and gadgets for kids.",
-              img: "kids.png",
-            },
-          ].map((category, index) => (
-            <div
-              key={index}
-              className="
-        bg-gradient-to-r from-blue-100 to-blue-50
-          border border-gray-300 
-          rounded-lg 
-          shadow-md 
-          hover:shadow-xl
-          overflow-hidden 
-           
-          transition
-        "
-            >
-              {/* Image with 'pop-in' animation */}
-              <img
-                src={category.img}
-                alt={category.title}
-                className="
-            w-full
-            h-48
-            object-cover
-            p-4
-           
-          "
-              />
-
-              <div className="p-4">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  {category.title}
-                </h3>
-                <p className="text-gray-600">{category.description}</p>
-
-                <button
-                  className="
-              mt-4
-              bg-blue-600
-              text-white
-              py-2
-              px-4
-              rounded
-              hover:bg-blue-700
-              transition
-            "
-                >
-                  Shop Now
-                </button>
+                  {/* Right: Image with slide-up animation */}
+                  <div className="md:w-1/2 flex justify-center">
+                    <img
+                      src={slide.image}
+                      alt={slide.headline}
+                      style={{
+                        animationName: "slideInUp",
+                        animationDuration: "1s",
+                        animationFillMode: "both",
+                        animationIterationCount: 1 
+                      }}
+                      className={`
+                        w-full h-full  object-contain
+                        transition-all duration-700 ease-in-out
+                        transform
+                        ${
+                          isActive
+                            ? "opacity-100 translate-y-0"
+                            : "opacity-0 translate-y-10"
+                        }
+                      `}
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
+            );
+          })}
+        </div>
+
+        {/* Left Arrow */}
+        <button
+          onClick={goToPrev}
+          className="absolute left-4 top-1/2 transform -translate-y-1/2
+                     w-10 h-10 rounded-full border border-white
+                     flex items-center justify-center
+                     text-white hover:bg-white hover:text-black
+                     transition"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="2"
+            stroke="currentColor"
+            className="w-4 h-4"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15.75 19.5L8.25 12l7.5-7.5"
+            />
+          </svg>
+        </button>
+
+        {/* Right Arrow */}
+        <button
+          onClick={goToNext}
+          className="absolute right-4 top-1/2 transform -translate-y-1/2
+                     w-10 h-10 rounded-full border border-white
+                     flex items-center justify-center
+                     text-white hover:bg-white hover:text-black
+                     transition"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="2"
+            stroke="currentColor"
+            className="w-4 h-4"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M8.25 4.5l7.5 7.5-7.5 7.5"
+            />
+          </svg>
+        </button>
+
+        {/* Indicator Dots */}
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+          {slides.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentSlide(idx)}
+              className={`w-3 h-3 rounded-full border-2
+                          transition-all duration-300
+                          ${
+                            currentSlide === idx
+                              ? "bg-yellow-400 border-yellow-400"
+                              : "border-white"
+                          }`}
+            />
           ))}
         </div>
-      </div>
+      </section>
 
-      <section className="bg-gradient-to-r from-yellow-200 to-yellow-50 py-10 px-8 mx-8">
-        {/* Section Heading */}
-        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8 text-center">
-          Big Savings on Big SALE!!!
-        </h2>
+      {/* Optional Slider Below (if you want both sliders) */}
+      <SliderComponent />
 
-        {/* Grid of Products */}
-        <div
-          className="
+      {/* Recommendations Section */}
+       <RecommendationSection products={recProducts} /> 
+
+      {/* Sale Section */}
+      <section className="py-10 px-8 mx-8">
+  <h2 className="text-3xl md:text-4xl font-bold text-center mb-8">
+    Big Savings on Big SALE!!!
+  </h2>
+  <div
+    className="
       grid 
       grid-cols-1 
       sm:grid-cols-2 
       md:grid-cols-3 
       xl:grid-cols-6 
-      gap-4 
+      gap-6 
       w-full
     "
-        >
-          {products.map((item) => (
-            <div
-              key={item.id}
-              className="bg-white rounded-lg shadow-lg flex flex-col overflow-hidden"
-            >
-              <div className="relative w-full pb-[100%] overflow-hidden rounded-lg">
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-              </div>
+    
+  >
+    {products.map((item) => (
+      <div
+        key={item.id}
+        className="
+          relative 
+          w-full 
+          bg-gray-100 
+          rounded-lg 
+          overflow-hidden
+          aspect-square
+             transform
+          transition
+          duration-300
+          hover:scale-105
+          cursor-pointer
+        "
+        onClick={() => {
+          navigate(`/category/${item.productCategory.name}/${item.id}`);
+        }}
+      >
+        {/* Background Image */}
+        <img
+          src={item.mainImage}
+          alt={item.name}
+          className="
+            absolute 
+            inset-0 
+            w-full 
+            h-full 
+            object-cover
+          "
+        />
 
-              {/* Card Content */}
-              <div className="p-4 flex flex-col h-full">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                  {item.title}
-                </h3>
-
-                {/* Pricing */}
-                <div className="flex items-center mb-2">
-                  {item.oldPrice && (
-                    <span className="text-sm text-gray-400 line-through mr-2">
-                      {item.oldPrice}
-                    </span>
-                  )}
-                  <span className="text-md font-bold text-gray-800">
-                    {item.newPrice}
-                  </span>
-                </div>
-
-                {/* Ratings (simple stars) */}
-                {item.rating && (
-                  <div className="flex items-center mb-4">
-                    <span className="text-yellow-400 mr-1">
-                      {"★".repeat(Math.floor(item.rating))}
-                    </span>
-                    <span className="text-gray-300">
-                      {"★".repeat(5 - Math.floor(item.rating))}
-                    </span>
-                  </div>
-                )}
-
-                {/* Button at bottom */}
-                <div className="mt-auto">
-                  <button
-                    className="
-                bg-blue-600
-                text-white
-                text-sm
-                py-2
-                px-3
-                rounded
-                hover:bg-blue-700
-                transition
-              "
-                  >
-                    Explore Products
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+        {/* Top: Product Name */}
+        <div className="absolute top-2 left-2">
+          <h3 className=" text-white px-2 py-1  text-sm sm:text-base">
+            {item.name}
+          </h3>
         </div>
-      </section>
 
-      <TrendingProductsSection />
-    
+        {/* Bottom Overlay with Details */}
+        <div
+          className="
+          absolute
+          bottom-0
+          left-0
+          w-full
+          p-3
+          bg-gradient-to-t 
+          from-black/80     
+          to-transparent    
+          text-white
+          flex
+          flex-col
+        
+          gap-2
+        "
+        >
+          {/* Pricing */}
+          <div className="flex items-center">
+            {item.price && (
+              <span className="text-sm font-bold mr-2">
+                ₹ {item.price}
+              </span>
+            )}
+            <span className="text-sm font-bold">{item.newPrice}</span>
+          </div>
+
+          {/* Ratings */}
+          {item.rating && (
+            <div className="flex items-center">
+              <span className="text-yellow-400 mr-1">
+                {"★".repeat(Math.floor(item.rating))}
+              </span>
+              <span className="text-gray-300">
+                {"★".repeat(5 - Math.floor(item.rating))}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
+
+
+      {/* Trending Products Section */}
+    <Testimonial></Testimonial>
     </div>
-    
   );
 };
 

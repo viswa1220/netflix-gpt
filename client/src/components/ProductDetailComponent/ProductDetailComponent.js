@@ -5,23 +5,24 @@ import { CartContext } from "../../context/CartContext";
 import { graphQLCommand } from "../../util";
 import RelatedProductsSection from "../RelatedProductsSection/RelatedProductsSection";
 const ProductDetailComponent = () => {
-  const { categoryName, id } = useParams(); // Extract category and product ID from URL
+  const { categoryName, id } = useParams();
   const [product, setProduct] = useState(null);
   const [selectedColor, setSelectedColor] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [showAddReview, setShowAddReview] = useState(false);
   const [newReview, setNewReview] = useState({ comment: "", rating: 0 });
   const [loading, setLoading] = useState(true);
-  const [productLoaded, setProductLoaded] = useState(false); // To prevent re-fetching if already fetched
+  const [productLoaded, setProductLoaded] = useState(false);
   const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState(0);
   const [reviewsToShow, setReviewsToShow] = useState(5);
+  const [RelatedData, setRelatedData] = useState([]);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const { addToCart } = useContext(CartContext);
 
   // Fetch product details by ID
   const fetchProductDetails = async () => {
-  
     const PRODUCT_QUERY = `
       query GetProductById($id: ID!) {
         getProductById(id: $id) {
@@ -58,26 +59,23 @@ const ProductDetailComponent = () => {
       const fetchedProduct = response.getProductById;
 
       if (fetchedProduct) {
-        // Combine slider images and video into one array
         const sliderContent = [
           ...(fetchedProduct.sliderImages || []),
           fetchedProduct.video ? fetchedProduct.video : null,
         ].filter(Boolean);
 
-        // Calculate the average rating
-        const reviews = fetchedProduct.reviews || []; // Ensure reviews is always an array
+        const reviews = fetchedProduct.reviews || [];
         const averageRating =
           reviews.length > 0
             ? reviews.reduce((sum, review) => sum + review.rating, 0) /
               reviews.length
             : 0;
 
-        // Set the state with the updated data
         setProduct({
           ...fetchedProduct,
           sliderContent,
           reviews,
-          averageRating: averageRating.toFixed(1), // Round to 1 decimal place
+          averageRating: averageRating.toFixed(1),
         });
 
         if (fetchedProduct.colors?.length > 0) {
@@ -89,13 +87,15 @@ const ProductDetailComponent = () => {
       console.error("Error fetching product details:", error);
     } finally {
       setLoading(false);
-      setProductLoaded(true); // Set to true once the product is fetched
+      setProductLoaded(true);
     }
   };
   useEffect(() => {
-    fetchProductDetails(); // Only runs when `id` changes
+    fetchProductDetails();
   }, [id]);
-
+  useEffect(() => {
+    fetchAllProduct();
+  }, [categoryName, id]);
   // Add product to cart
   const handleAddToCart = () => {
     if (!product || product.availableCount === 0) {
@@ -155,9 +155,48 @@ const ProductDetailComponent = () => {
       console.error("Error adding review:", error);
     }
   };
+  const fetchAllProduct = async () => {
+    const query = `
+      query {
+        getAllProducts {
+          id
+          name
+          price
+          availableCount
+          description
+          mainImage
+          Brand
+          offer
+          productCategory { id name }
+          reviews { id rating }
+        }
+      }
+    `;
+    const response = await graphQLCommand(query);
+
+    const filteredData =
+      categoryName === "All"
+        ? response.getAllProducts.filter(
+            (item, index, self) =>
+              index === self.findIndex((p) => p.id === item.id) // Ensure uniqueness
+          )
+        : response.getAllProducts
+            .filter(
+              (item) =>
+                item.productCategory.name.includes(categoryName) &&
+                item.id !== id
+            )
+            .filter(
+              (item, index, self) =>
+                index === self.findIndex((p) => p.id === item.id) // Ensure uniqueness
+            );
+
+    console.log("Filtered Related Data (Unique):", filteredData);
+    setRelatedData(filteredData);
+  };
 
   if (loading) {
-    return <p className="text-center text-gray-500">Loading product...</p>;
+    return <p className="text-center text">Loading product...</p>;
   }
 
   if (!product) {
@@ -167,16 +206,15 @@ const ProductDetailComponent = () => {
   return (
     <div className="product">
       <NavBar />
-      <div className="ProductDetail bg-gradient-to-t from-gray-50 to-yellow-100 min-h-screen py-8 px-8">
+      <div className="ProductDetail bg-gradient-to-t from-gray-50 to-yellow-100 min-h-screen py-8 ">
         <div className="flex flex-col lg:flex-row gap-4 px-4 lg:px-8">
-          <div className="w-full  bg-gradient-to-r from-purple-50 to-purple-100 border border-gray-300 rounded-lg shadow-md border border-gray-500 p-6 max-w-full">
+        <div className="w-full  bg-gradient-to-b from-gray-50 to-blue-100 flex-1 rounded-lg shadow-md p-6">
             <h1 className="text-3xl font-bold text-blue-800 uppercase mb-4">
               {product.name}
             </h1>
             <div className="flex flex-col lg:flex-row justify-between">
-              <div className="w-full lg:w-[40%]">
+              <div className="w-full lg:w-[50%]">
                 <div className="text-xl font-bold text-red-500">
-                  
                   <span>₹{product.price}</span>
                 </div>
                 {product.offer && (
@@ -200,14 +238,32 @@ const ProductDetailComponent = () => {
                             setSelectedColor(color);
                             setSelectedImage(color.image);
                           }}
-                          className={`w-12 h-12 rounded-full border-4 ${
+                          className={`w-12 h-12 rounded-full ${
                             selectedColor?.color === color.color
-                              ? "border-blue-500"
-                              : "border-gray-300"
+                              ? "border-4 border-gray-300"
+                              : "border--4 border-gray-500"
                           }`}
                           style={{ backgroundColor: color.color.toLowerCase() }}
                           aria-label={color.color}
                         ></button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {product.sizes?.length > 0 && (
+                  <div className="mt-4">
+                    <h3 className="text-lg font-semibold">Select Size:</h3>
+                    <div className="flex space-x-4 mt-2">
+                      {product.sizes.map((size, index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            alert(`Selected size: ${size}`);
+                          }}
+                          className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg"
+                        >
+                          {size}
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -225,45 +281,142 @@ const ProductDetailComponent = () => {
                   >
                     Add to Cart
                   </button>
+
+                  <div className="w-full">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                      Description And Features
+                    </h2>
+                    <p
+                      className={`text-gray-700 ${
+                        isExpanded ? "" : "line-clamp-6"
+                      } whitespace-pre-wrap`}
+                    >
+                      {product.description}
+                    </p>
+                    <button
+                      onClick={() => setIsExpanded(!isExpanded)}
+                      className="mt-2 text-blue-500 underline"
+                    >
+                      {isExpanded ? "Show Less" : "Read More"}
+                    </button>
+
+                    <div className="flex justify-between items-center">
+                      <h2 className="text-2xl font-bold text-gray-800">
+                        Reviews
+                      </h2>
+                      <button
+                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                        onClick={() => setShowAddReview(true)}
+                      >
+                        Add Review
+                      </button>
+                    </div>
+                    <div className="mt-4 text-xl text-center font-bold text-gray-800 p-2 rounded-md">
+                      Overall Rating: {product.averageRating}
+                    </div>
+                    {product.reviews
+                      .slice(0, reviewsToShow)
+                      .map((review, index) => (
+                        <div key={index} className="mt-4">
+                          <h3 className="text-lg font-semibold">
+                            {review.name}
+                          </h3>
+                          <p className="text-gray-700">{review.comment}</p>
+                          <span className="text-yellow-500">
+                            Rating: {review.rating}★
+                          </span>
+                        </div>
+                      ))}
+                    {product.reviews.length > reviewsToShow && (
+                      <button
+                        className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                        onClick={() => setReviewsToShow((prev) => prev + 5)}
+                      >
+                        View More Reviews
+                      </button>
+                    )}
+                  </div>
+                  {showAddReview && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                      <div className="bg-white rounded-lg shadow-lg p-6 w-[90%] max-w-[500px]">
+                        <h3 className="text-lg font-bold text-gray-800 mb-4">
+                          Add Review
+                        </h3>
+                        <textarea
+                          className="w-full p-2  rounded-md mb-4"
+                          placeholder="Write your review..."
+                          value={newReview.comment}
+                          onChange={(e) =>
+                            setNewReview({
+                              ...newReview,
+                              comment: e.target.value,
+                            })
+                          }
+                        />
+                        <input
+                          type="number"
+                          max="5"
+                          min="1"
+                          className="w-full p-2  rounded-md mb-4"
+                          placeholder="Rating (1-5)"
+                          value={newReview.rating}
+                          onChange={(e) =>
+                            setNewReview({
+                              ...newReview,
+                              rating: Number(e.target.value),
+                            })
+                          }
+                        />
+                        <div className="flex justify-end">
+                          <button
+                            className="bg text-white px-4 py-2 rounded-md hover:bg-gray-600 mr-2"
+                            onClick={() => setShowAddReview(false)}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+                            onClick={handleAddReview}
+                          >
+                            Submit
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="w-full lg:w-[30%] flex justify-center items-center mt-4 me-64">
+              <div className="w-full lg:w-[50%] m-4 flex justify-center">
                 <img
                   src={selectedImage || product.sliderImages[0]}
                   alt="Selected product view"
-                  className="w-full h-[300px] object-cover"
+                  className="w-full h-[500px] object-cover"
                 />
               </div>
             </div>
           </div>
-        
+          
+          
+
+          {/*  <div className="relatedProducts w-full">
+            <RelatedProductsSection
+              RelatedProducts={RelatedData}
+              category={categoryName}
+            ></RelatedProductsSection>
+          </div> */}
         </div>
 
         {/* Product Details */}
-        <div className="flex flex-col lg:flex-row gap-4 px-4 lg:px-8 mt-8">
-          {/* Left Section: Description */}
-          <div className="w-full lg:w-[30%] bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-lg shadow-md border border-gray-500">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              Description
-            </h2>
-            <p className="text-gray-700 mb-6">{product.description}</p>
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Features</h2>
-            <ul className="list-disc list-inside text-gray-700">
-              {product.features.map((feature, index) => (
-                <li key={index}>{feature}</li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Middle Section: Slider */}
-          <div className="w-full lg:w-[30%] bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-lg shadow-md border border-gray-500">
-            <div className="text-black font-bold text-2xl pb-2">More Views</div>
+        <div className="w-full h-auto bg-gradient-to-b from-gray-50 to-blue-100 p-6 rounded-lg shadow-md self-start">
+            <div className="text-black font-bold text-2xl pb-2">
+              More Details
+            </div>
             <div className="relative overflow-hidden rounded-lg shadow-md">
               {/* Slider Container */}
               {product.sliderContent.map((content, index) => (
                 <div
                   key={index}
-                  className={`w-full h-[250px] sm:h-[350px] lg:h-[450px] transition-all duration-500 ease-in-out ${
+                  className={`w-full h-[550px] sm:h-[550px] lg:h-[600px] transition-all duration-500 ease-in-out ${
                     activeIndex === index ? "block" : "hidden"
                   }`}
                 >
@@ -284,8 +437,32 @@ const ProductDetailComponent = () => {
               ))}
 
               {/* Navigation Arrows */}
-              <button
-                className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-blue-500 text-white rounded-full p-2 hover:bg-blue-600 shadow-md z-10"
+              <div
+                className="absolute left-2 flex items-center justify-center w-8 h-8 -mr-4 text-white bg-gray-800 rounded-full cursor-pointer top-1/2 transform -translate-y-1/2 hover:bg-gray-700"
+                onClick={() =>
+                  setActiveIndex((prevIndex) =>
+                    prevIndex === 0
+                      ? product.sliderContent.length - 1
+                      : prevIndex - 1
+                  )
+                }
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </div>
+              {/*  <button
+                className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-yellow-500 text-white rounded-full p-2  hover:bg-yellow-300 shadow-md z-10"
                 onClick={() =>
                   setActiveIndex((prevIndex) =>
                     prevIndex === 0
@@ -295,9 +472,9 @@ const ProductDetailComponent = () => {
                 }
               >
                 &#8249;
-              </button>
-              <button
-                className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-blue-500 text-white rounded-full p-2 hover:bg-blue-600 shadow-md z-10"
+              </button> */}
+              <div
+                className="absolute top-1/2 right-2 transform -translate-y-1/2 text-white rounded-full p-2 shadow-md z-10 bg-gray-800 rounded-full cursor-pointer"
                 onClick={() =>
                   setActiveIndex((prevIndex) =>
                     prevIndex === product.sliderContent.length - 1
@@ -306,8 +483,20 @@ const ProductDetailComponent = () => {
                   )
                 }
               >
-                &#8250;
-              </button>
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </div>
             </div>
 
             {/* Indicator Dots */}
@@ -316,99 +505,20 @@ const ProductDetailComponent = () => {
                 <span
                   key={idx}
                   className={`w-3 h-3 mx-1 rounded-full cursor-pointer ${
-                    idx === activeIndex
-                      ? "bg-blue-500"
-                      : "bg-gray-300 hover:bg-blue-400"
+                    idx === activeIndex ? "bg-blue-500" : "bg hover:bg-blue-400"
                   }`}
                   onClick={() => setActiveIndex(idx)}
                 ></span>
               ))}
             </div>
           </div>
-
-         
-          {/* Right Section: Reviews */}
-          <div className="w-full lg:w-[40%] px-6 py-8 bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-lg shadow-md border border-gray-500">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-800">Reviews</h2>
-              <button
-                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-                onClick={() => setShowAddReview(true)}
-              >
-                Add Review
-              </button>
-            </div>
-            <div className="mt-4 text-xl text-center font-bold text-gray-800 p-2 rounded-md">
-              Overall Rating: {product.averageRating}
-            </div>
-            {product.reviews.slice(0, reviewsToShow).map((review, index) => (
-              <div key={index} className="mt-4">
-                <h3 className="text-lg font-semibold">{review.name}</h3>
-                <p className="text-gray-700">{review.comment}</p>
-                <span className="text-yellow-500">
-                  Rating: {review.rating}★
-                </span>
-              </div>
-            ))}
-            {product.reviews.length > reviewsToShow && (
-              <button
-                className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-                onClick={() => setReviewsToShow((prev) => prev + 5)}
-              >
-                View More Reviews
-              </button>
-            )}
-            {/* Add Review Modal */}
-            {showAddReview && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg shadow-lg p-6 w-[90%] max-w-[500px]">
-                  <h3 className="text-lg font-bold text-gray-800 mb-4">
-                    Add Review
-                  </h3>
-                  <textarea
-                    className="w-full p-2 border rounded-md mb-4"
-                    placeholder="Write your review..."
-                    value={newReview.comment}
-                    onChange={(e) =>
-                      setNewReview({ ...newReview, comment: e.target.value })
-                    }
-                  />
-                  <input
-                    type="number"
-                    max="5"
-                    min="1"
-                    className="w-full p-2 border rounded-md mb-4"
-                    placeholder="Rating (1-5)"
-                    value={newReview.rating}
-                    onChange={(e) =>
-                      setNewReview({
-                        ...newReview,
-                        rating: Number(e.target.value),
-                      })
-                    }
-                  />
-                  <div className="flex justify-end">
-                    <button
-                      className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 mr-2"
-                      onClick={() => setShowAddReview(false)}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
-                      onClick={handleAddReview}
-                    >
-                      Submit
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+        <div className="relatedProducts w-full mt-2">
+          <RelatedProductsSection
+            RelatedProducts={RelatedData}
+            category={categoryName}
+          ></RelatedProductsSection>
         </div>
-        <div className="relatedProducts">
-
-        </div>
+       
       </div>
     </div>
   );

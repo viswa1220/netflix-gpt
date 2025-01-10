@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { CartContext } from "../../context/CartContext";
-import TrendingProductsSection from "../TrendingProductsSection/TrendingProductsSection";
+
 
 const CartComponent = () => {
   const { cartItems, removeFromCart, updateQuantity } = useContext(CartContext);
@@ -201,9 +201,9 @@ const CartComponent = () => {
                   Place Order
                 </button>
               </div>
-              <div className="mt-6">
+             {/*  <div className="mt-6">
                 <TrendingProductsSection />
-              </div>
+              </div> */}
             </div>
           </>
         )}

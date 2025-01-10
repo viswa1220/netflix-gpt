@@ -27,7 +27,10 @@ const BodyComponent = () => {
     { path: "/products", element: <ProductPage /> },
     { path: "/category/:categoryName", element: <ProductPage /> },
     { path: "/products/:gender/", element: <ProductPage /> },
-    { path: "/category/:categoryName/:id", element: <ProductDetailComponent /> },
+    {
+      path: "/category/:categoryName/:id",
+      element: <ProductDetailComponent />,
+    },
     { path: "/cart", element: <CartComponent /> },
     { path: "/checkout", element: <CheckoutForm /> },
     { path: "/thankyou", element: <Thankyou /> },
@@ -41,7 +44,7 @@ const BodyComponent = () => {
   ]);
 
   return (
-    <div className="flex flex-col min-h-screen  bg-gradient-to-b from-gray-100 to-yellow-200">
+    <div className="flex flex-col min-h-screen font-rubik">
       <CartProvider>
         <div className="flex-grow">
           <RouterProvider router={appRouter} />

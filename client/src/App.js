@@ -3,7 +3,10 @@ import BodyComponent from "./components/Body/BodyComponent";
 
 function App() {
   return (
-    <BodyComponent />
+    <div className="font-rubik">
+      <BodyComponent />
+    </div>
+    
   );
 }
 

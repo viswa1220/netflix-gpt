@@ -50,7 +50,7 @@ const ProductManagement = ({ categories }) => {
     video: null,
     sizes: [],
     Brand: "",
-    gender:"",
+    gender: "",
     saleStatus: false,
     trendingStatus: false,
   });
@@ -160,10 +160,10 @@ const ProductManagement = ({ categories }) => {
         setLoading(false);
         return;
       }
-  
+
       // Make a copy so we can mutate the final URLs
       const finalProduct = { ...product };
-  
+
       // Upload mainImage if it's a File
       if (finalProduct.mainImage instanceof File) {
         const url = await uploadToCloudinary(
@@ -174,7 +174,7 @@ const ProductManagement = ({ categories }) => {
         );
         finalProduct.mainImage = url;
       }
-  
+
       // Upload sliderImages
       if (
         Array.isArray(finalProduct.sliderImages) &&
@@ -202,7 +202,7 @@ const ProductManagement = ({ categories }) => {
           finalProduct.sliderImages = [...existing, ...sliderUrls];
         }
       }
-  
+
       // Upload color images
       if (Array.isArray(finalProduct.colors)) {
         const updatedColors = [];
@@ -222,7 +222,7 @@ const ProductManagement = ({ categories }) => {
         }
         finalProduct.colors = updatedColors;
       }
-  
+
       // Upload video if it's a File
       if (finalProduct.video instanceof File) {
         const uploadedVideoUrl = await uploadToCloudinary(
@@ -233,9 +233,9 @@ const ProductManagement = ({ categories }) => {
         );
         finalProduct.video = uploadedVideoUrl;
       }
-  
+
       console.log("Final Product to Save:", finalProduct);
-  
+
       // Build the input object for the GraphQL mutation
       const productInput = {
         name: finalProduct.name,
@@ -258,16 +258,16 @@ const ProductManagement = ({ categories }) => {
         saleStatus: finalProduct.saleStatus,
         trendingStatus: finalProduct.trendingStatus,
       };
-  
+
       const variables = { input: productInput };
       const responseData = await graphQLCommand(
         ADD_PRODUCT_MUTATION,
         variables
       );
-  
+
       console.log("Response from server (addProduct):", responseData);
       alert("Product saved successfully!");
-  
+
       // Clear the form fields
       setProduct({
         name: "",
@@ -294,7 +294,7 @@ const ProductManagement = ({ categories }) => {
       setLoading(false); // hide loader
     }
   };
-  
+
   return (
     <div className="p-6 bg-gradient-to-r from-purple-50 to-purple-100 border border-gray-300 rounded-lg shadow-md relative">
       <h2 className="text-2xl font-bold mb-4">Product Management</h2>
@@ -466,13 +466,15 @@ const ProductManagement = ({ categories }) => {
           />
         </div>
 
-        <input type="text"
+        <input
+          type="text"
           name="Brand"
           placeholder="Brand Name"
           value={product.Brand}
           onChange={handleInputChange}
-          className="border p-2 rounded w-full"/>
-          <select
+          className="border p-2 rounded w-full"
+        />
+        <select
           name="gender"
           value={product.gender}
           onChange={handleInputChange}
@@ -482,6 +484,7 @@ const ProductManagement = ({ categories }) => {
           <option value="Unisex">Unisex</option>
           <option value="Male">Male</option>
           <option value="Female">Female</option>
+          <option value="Kids">Kids</option>
         </select>
 
         {/* Sizes */}

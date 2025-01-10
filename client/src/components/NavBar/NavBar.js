@@ -16,10 +16,10 @@ const NavBar = () => {
   ];
 
   return (
-    <nav className="bg-white shadow rounded-md ">
+    <nav className="bg-[#252F3B] shadow">
       <div className="h-26 px-4 flex items-center justify-between">
         {/* Left: Logo / Brand */}
-        <Link to="/" className="text-xl font-bold text-gray-800">
+        <Link to="/" className="text-xl font-bold text-[#FFD65A]">
          <img src="/logo.png" alt="logo for website"></img>
         </Link>
 
@@ -29,7 +29,7 @@ const NavBar = () => {
             <Link
               key={link.name}
               to={link.href}
-              className="text-gray-600 hover:text-gray-900 transition"
+              className="text-[#FFD65A] font-normal text-lg"
             >
               {link.name}
             </Link>

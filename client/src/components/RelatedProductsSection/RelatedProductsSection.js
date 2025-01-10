@@ -1,131 +1,150 @@
-import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import Slider from "react-slick"; // Importing react-slick
-import "slick-carousel/slick/slick.css"; // Slick styles
-import "slick-carousel/slick/slick-theme.css";
-import { graphQLCommand } from "../../util";
+import React from "react";
+import Slider from "react-slick";
+import { useNavigate } from "react-router-dom";
 
-const RelatedProductsSection = ({ categoryName, currentProductId }) => {
-  const [relatedProducts, setRelatedProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+// Slick Arrow Components (optional custom)
+const NextArrow = (props) => {
+  const { className, onClick } = props;
+  return (
+    <div
+      className={`${className} !flex !items-center !justify-center !bg-yellow-500 !rounded-full !text-white !shadow-md hover:!bg-yellow-300`}
+      onClick={onClick}
+      style={{ right: "0", zIndex: 10 }}
+    >
+      &#8250;
+    </div>
+  );
+};
+
+const PrevArrow = (props) => {
+  const { className, onClick } = props;
+  return (
+    <div
+      className={`${className} !flex !items-center !justify-center !bg-yellow-500 !rounded-full !text-white !shadow-md hover:!bg-yellow-300`}
+      onClick={onClick}
+      style={{ left: "0", zIndex: 10 }}
+    >
+      &#8249;
+    </div>
+  );
+};
+
+const RelatedProductsSection = ({ RelatedProducts, category }) => {
   const navigate = useNavigate();
 
-  const fetchRelatedProducts = async () => {
-    const RELATED_PRODUCTS_QUERY = `
-      query GetProductsByCategoryName($name: String!) {
-        productsByCategory(name: $name) {
-          id
-          name
-          price
-          mainImage
-          availableCount
-          offer
-          productCategory {
-            name
-          }
-        }
-      }
-    `;
+  if (!Array.isArray(RelatedProducts) || RelatedProducts.length === 0) {
+    return (
+      <section className="p-4 w-full  rounded-md">
+        <h2 className="text-3xl font-bold text-red-500 text-center uppercase mb-2">
+          Related Products
+        </h2>
+        <p className="text-center text-gray-500">
+          No related products available
+        </p>
+      </section>
+    );
+  }
 
-    try {
-      setLoading(true);
-      const response = await graphQLCommand(RELATED_PRODUCTS_QUERY, { name: categoryName });
-      if (response.productsByCategory) {
-        // Exclude the current product
-        const filteredProducts = response.productsByCategory.filter(
-          (product) => product.id !== currentProductId
-        );
-        setRelatedProducts(filteredProducts);
-      }
-    } catch (err) {
-      setError("Failed to fetch related products.");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (categoryName && currentProductId) {
-      fetchRelatedProducts();
-    }
-  }, [categoryName, currentProductId]);
-
-  if (loading) return <p className="text-gray-500">Loading related products...</p>;
-  if (error) return <p className="text-red-500">{error}</p>;
-  if (relatedProducts.length === 0)
-    return <p className="text-gray-500">No related products available.</p>;
-
-  const sliderSettings = {
+  // Slider Settings
+  const settings = {
     dots: true,
-    infinite: true,
+    infinite: false,
     speed: 500,
-    slidesToShow: 1,
+    slidesToShow: 3, // default (desktop)
     slidesToScroll: 1,
-    autoplaySpeed: 3000,
-    autoplay: true,
-    arrows:false,
+    nextArrow: <NextArrow />,
+    prevArrow: <PrevArrow />,
     responsive: [
       {
-        breakpoint: 768, // Mobile devices
+        breakpoint: 1024, // below 1024px
         settings: {
-          slidesToShow: 1,
-          slidesToScroll: 1,
+          slidesToShow: 2, // tablet
         },
       },
       {
-        breakpoint: 1024, // Tablets
+        breakpoint: 768, // below 768px
         settings: {
-          slidesToShow: 2,
-          slidesToScroll: 1,
+          slidesToShow: 1, // mobile
         },
       },
     ],
   };
 
   return (
-    <div className="related-products-section">
-      <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">Similar Products</h2>
-      <Slider {...sliderSettings}>
-        {relatedProducts.map((product) => (
-          <div
-            key={product.id}
-            className="px-4"
-          >
-            <div className="">
-              <img
-                src={product.mainImage}
-                alt={product.name}
-                className="w-full h-60 object-cover m-3 rounded-md"
-              />
-              <h3 className="text-lg font-bold text-gray-800 mb-1">
-                {product.name}
-              </h3>
-              <p className="text-red-500 font-semibold">Price: ₹{product.price}</p>
-              <p className="text-green-500">
-                {product.availableCount > 0
-                  ? `${product.availableCount} in stock`
-                  : "Out of stock"}
-              </p>
-              {product.offer && (
-                <p className="text-sm text-yellow-500 bg-yellow-200 px-2 py-1 rounded-md inline-block mt-2">
-                  {product.offer}% OFF
-                </p>
-              )}
-              <button
-                onClick={() =>
-                  navigate(`/category/${product.productCategory.name}/${product.id}`)
-                }
-                className="block mt-4 bg-blue-500 text-white text-center py-2 px-4 rounded-md hover:bg-blue-600"
+    <section className="p-4 w-full   rounded-md ">
+      <h2 className="text-3xl font-bold text-red-500 text-center uppercase">
+        Related Products
+      </h2>
+
+      {/* React Slick Slider */}
+      <div className="mt-4">
+        <Slider {...settings}>
+          {RelatedProducts.map((product) => (
+            <div key={product.id} className="px-2">
+              <div
+                className="
+                 bg-gradient-to-b from-gray-50 to-blue-100   rounded-lg shadow-md
+                  overflow-hidden
+                  flex
+                  flex-col
+                  h-full
+                  my-4
+                "
+                style={{ minHeight: "400px" }}
               >
-                View Details
-              </button>
+                {/* Image Container */}
+                <div className="h-[250px]">
+                  <img
+                    src={product.mainImage}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                {/* Product Details */}
+                <div className="p-4 flex flex-col justify-between flex-grow">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-800 uppercase mb-2">
+                      {product.name}
+                      {product.Brand && (
+                        <span className="text-gray-700 bg-purple-200 ms-1 px-2 py-1 rounded-md text-[10px] italic border border-gray-500">
+                          {product.Brand}
+                        </span>
+                      )}
+                    </h3>
+
+                    <p className="text-red-500 font-semibold mb-1">
+                      Price: ₹{product.price}
+                    </p>
+
+                    <p className="text-green-500">
+                      {product.availableCount < 5
+                        ? `Only ${product.availableCount} left!`
+                        : `${product.availableCount} in stock`}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-red-600 bg-red-100 px-2 py-1 rounded-md text-xs font-bold">
+                      {product.offer || "No Offer"}% OFF
+                    </span>
+
+                    <button
+                      className="bg-blue-600 text-white text-sm py-1 px-3 rounded-md hover:bg-blue-700 transition"
+                      onClick={() =>
+                        navigate(`/category/${category}/${product.id}`)
+                      }
+                    >
+                      View Details
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
-      </Slider>
-    </div>
+          ))}
+        </Slider>
+      </div>
+    </section>
   );
 };
 

@@ -1,67 +1,21 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom"; // To get the category name from URL
-import { graphQLCommand } from "../../util"; // Import the utility function
+import React, { useEffect, useState, useCallback } from "react";
+import { graphQLCommand } from "../../util";
+import { useParams, useNavigate } from "react-router-dom";
+import NavBar from "../NavBar/NavBar";
 
 const ProductPage = () => {
-  const { categoryName } = useParams(); // Get the category name from the URL
-  const navigate = useNavigate();
-  const [products, setProducts] = useState([]); // Initialize as an empty array, not null
+  const [Products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [brands, setBrands] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [searchText, setSearchText] = useState("");
+  const [priceRange, setPriceRange] = useState([0, 10000]); // Adjust as per product price ranges
+  const { categoryName } = useParams();
+  const navigate = useNavigate();
 
-  // Fetch products by category
-  const fetchProductsByCategory = async (categoryName) => {
-    const query = `
-      query($name: String!) {
-        productsByCategory(name: $name) {
-          id
-          name
-          price
-          availableCount
-          description
-          mainImage
-          Brand
-          offer
-          productCategory {
-            id
-            name
-          }
-          reviews {
-            id
-            rating
-          }
-        }
-      }
-    `;
-  
-    try {
-      setLoading(true);
-      const data = await graphQLCommand(query, { name: categoryName });
-      const products = data.productsByCategory || [];
-  console.log(products)
-      const productsWithRating = products.map((product) => {
-        const reviews = product.reviews || [];
-        const totalRating = reviews.reduce(
-          (acc, review) => acc + (review.rating || 0),
-          0
-        );
-        const averageRating =
-          reviews.length > 0 ? (totalRating / reviews.length).toFixed(1) : "N/A"; // Set "N/A" if no reviews
-        return { ...product, rating: averageRating };
-      });
-  
-      setProducts(productsWithRating);
-    } catch (error) {
-      console.error("Error fetching products by category:", error);
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-
-  // Fetch all products when category is "All"
-  const fetchAllProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     const query = `
       query {
         getAllProducts {
@@ -73,101 +27,190 @@ const ProductPage = () => {
           mainImage
           Brand
           offer
-          productCategory {
-            id
-            name
-          }
-          reviews {
-            id
-            rating
-          }
+          rating
+          productCategory { id name }
+          reviews { id rating }
         }
       }
     `;
-  
     try {
-      setLoading(true);
-      const data = await graphQLCommand(query);
-      const products = data.getAllProducts || [];
-  
-      const productsWithRating = products.map((product) => {
-        const reviews = product.reviews || [];
-        const totalRating = reviews.reduce(
-          (acc, review) => acc + (review.rating || 0),
-          0
-        );
-        const averageRating =
-          reviews.length > 0 ? (totalRating / reviews.length).toFixed(1) : "N/A"; // Set "N/A" if no reviews
-        return { ...product, rating: averageRating };
-      });
-  
-      setProducts(productsWithRating);
+      const response = await graphQLCommand(query);
+      setProducts(response.getAllProducts);
+      setFilteredProducts(response.getAllProducts); // Initialize with all products
+      const categories = [
+        ...new Set(response.getAllProducts.map((p) => p.productCategory.name)),
+      ];
+      setCategories(categories);
     } catch (error) {
       console.error("Error fetching all products:", error);
-      setError(error.message);
     } finally {
       setLoading(false);
     }
-  };
-  
+  }, []);
 
-  // Trigger data fetch based on category
-  useEffect(() => {
-    if (categoryName) {
-      if (categoryName === "All") {
-        fetchAllProducts(); // Fetch all products if "All" is the category
-      } else {
-        fetchProductsByCategory(categoryName); // Fetch products by category name
-      }
-    } else {
-      setError("Category name is missing"); // If categoryName is undefined or empty, handle it
+  const fetchBasedonCategory = useCallback(async () => {
+    if (!categoryName || categoryName === "All") {
+      fetchProducts();
+      return;
     }
-  }, [categoryName]);
 
-  // Check if products is an empty array or undefined, then display appropriate message
-  if (loading) return <div className="text-center py-4">Loading...</div>;
-  if (error)
-    return <div className="text-center text-red-500 py-4">Error: {error}</div>;
+    const query = `
+      query($name: String!) {
+        productsByCategory(name: $name) {
+          id
+          name
+          price
+          availableCount
+          description
+          mainImage
+          Brand
+          offer
+          rating
+          productCategory { id name }
+          reviews { id rating }
+        }
+      }
+    `;
+
+    try {
+      setLoading(true);
+      const variables = { name: categoryName };
+      const data = await graphQLCommand(query, variables);
+      setProducts(data.productsByCategory || []);
+      setFilteredProducts(data.productsByCategory || []); // Initialize filtered products
+    } catch (error) {
+      console.error("Error fetching products by category:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [categoryName, fetchProducts]);
+
+  // Handle Brand Filtering
+  const onFilterChange = (selectedBrand) => {
+    setBrands(selectedBrand);
+    filterProducts({ brand: selectedBrand, search: searchText, price: priceRange });
+  };
+
+  // Handle Category Filtering
+  const onCategoryChange = (selectedCat) => {
+    setSelectedCategory(selectedCat);
+    filterProducts({ category: selectedCat, brand: brands, search: searchText, price: priceRange });
+  };
+
+  // Handle Search Input
+  const onSearch = (e) => {
+    setSearchText(e.target.value);
+    filterProducts({ search: e.target.value, brand: brands, category: selectedCategory, price: priceRange });
+  };
+
+  // Handle Price Filter
+  const onPriceChange = (e) => {
+    const [min, max] = e.target.value.split(",").map(Number);
+    setPriceRange([min, max]);
+    filterProducts({ price: [min, max], brand: brands, category: selectedCategory, search: searchText });
+  };
+
+  // Filter Logic
+  const filterProducts = ({ brand = brands, category = selectedCategory, search = searchText, price = priceRange }) => {
+    let filtered = [...Products];
+
+    if (brand) {
+      filtered = filtered.filter((product) => product.Brand === brand);
+    }
+
+    if (category) {
+      filtered = filtered.filter((product) => product.productCategory.name === category);
+    }
+
+    if (search) {
+      filtered = filtered.filter((product) => product.name.toLowerCase().includes(search.toLowerCase()));
+    }
+
+    filtered = filtered.filter((product) => product.price >= price[0] && product.price <= price[1]);
+
+    setFilteredProducts(filtered);
+  };
+
+  useEffect(() => {
+    fetchBasedonCategory();
+  }, [categoryName, fetchBasedonCategory]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
-    <div className="w-full min-h-screen flex flex-col">
-      {/* Video Background */}
-      <section className="relative min-h-[30vh] flex items-center">
-        <video
-          autoPlay
-          loop
-          muted
-          className="absolute top-0 left-0 w-full h-full object-cover"
-        >
-          <source src="/product_video.mp4" type="video/mp4" />
-        </video>
-        <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-10"></div>
-        <div className="relative w-full max-w-6xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-6">
-            <div className="flex flex-col space-y-4 z-10 text-white">
-              <h1 className="text-3xl font-bold">Explore our Products</h1>
+    <div>
+      <section className="flex-1 p-6 bg-gradient-to-b from-gray-50 to-yellow-100">
+        <NavBar />
+        <section className="relative min-h-[30vh] flex items-center ">
+          <video
+            autoPlay
+            loop
+            muted
+            className="absolute top-0 left-0 w-full h-full object-cover z-0"
+          >
+            <source src="/product_video.mp4" type="video/mp4" />
+          </video>
+          <div className="relative z-10 flex flex-col space-y-4 text-center w-full">
+            <h1 className="text-3xl font-bold text-white">
+              Explore our Products
+            </h1>
+            <div className="flex justify-center space-x-4">
+              <select
+                id="categories"
+                value={selectedCategory}
+                onChange={(e) => onCategoryChange(e.target.value)}
+                className="border p-2 rounded-md w-full sm:w-auto bg-white z-20"
+              >
+                <option value="">All Categories</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                id="brands"
+                value={brands}
+                onChange={(e) => onFilterChange(e.target.value)}
+                className="border p-2 rounded-md w-full sm:w-auto bg-white z-20"
+              >
+                <option value="">All Brands</option>
+                {[...new Set(Products.map((product) => product.Brand))].map(
+                  (brand) => (
+                    <option key={brand} value={brand}>
+                      {brand}
+                    </option>
+                  )
+                )}
+              </select>
+
+
+              <input
+                type="text"
+                value={searchText}
+                onChange={onSearch}
+                placeholder="Search Products"
+                className="border p-2 rounded-md w-full sm:w-auto bg-white z-20"
+              />
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Product List Section */}
-      <section className="flex-1 p-6 bg-gradient-to-b from-gray-50 to-yellow-100">
-        <h2 className="text-3xl font-bold mb-4 text-red-500 text-center uppercase">
-          {categoryName === "All" ? "All Products" : categoryName}
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {products.length > 0 ? (
-            products.map((product) => (
+        <div className="grid grid-cols-6 sm:grid-cols-2 md:grid-cols-3  gap-6 pt-3">
+          {filteredProducts.length > 0 ? (
+            filteredProducts.map((product) => (
               <div
                 key={product.id}
-                className="rounded-lg shadow-lg p-4 flex flex-col hover:shadow-2xl transition-shadow bg-gradient-to-r from-purple-50 to-purple-100 border border-gray-500"
+                className="rounded-lg shadow-lg p-4 flex flex-col hover:shadow-2xl transition-shadow bg-gradient-to-r from-gray-50 to-blue-100 "
               >
-                <div className="p-2">
+                <div className="p-2 h-[30%] w-[30%]">
                   <img
                     src={product.mainImage}
                     alt={product.name}
-                    className="w-full h-64 object-cover mb-3 rounded-md shadow-md"
+                    className="aspect-square object-cover mb-3 rounded-md shadow-md"
                   />
                 </div>
                 <div className="flex justify-between items-center mb-1">
@@ -178,7 +221,7 @@ const ProductPage = () => {
                     </span>
                   </h3>
                   <span className="text-green-500 bg-green-100 px-2 py-1 rounded-md font-semibold">
-                    ★ {product.rating}
+                    ★ {product.rating || "No Ratings"}
                   </span>
                 </div>
                 <p className="text-red-500 font-semibold mb-1">

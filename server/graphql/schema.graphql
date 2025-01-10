@@ -92,6 +92,7 @@ type Product {
   gender: String!
   Brand: String!
   saleStatus: Boolean
+  rating:Float
   trendingStatus: Boolean
   createdAt: String!
   reviews: [Review!]
