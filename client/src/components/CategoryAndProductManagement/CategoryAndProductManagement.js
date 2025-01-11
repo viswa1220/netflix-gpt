@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { graphQLCommand } from "../../util"; // your fetch-based GraphQL
+import { graphQLCommand } from "../../util";
 import CategoryManagement from "../CategoryManagement/CategoryManagement";
 import ProductManagement from "../ProductManagement/ProductManagement";
 
 const CategoryAndProductManagement = () => {
-  // State for categories: each category = { _id, name }
+  // State for categories: each category = { _id, name, categoryImage, categoryID }
   const [categories, setCategories] = useState([]);
 
   // Fetch categories on mount
@@ -15,17 +15,26 @@ const CategoryAndProductManagement = () => {
           categories {
             id
             name
+            categoryImage
+            categoryID
+            description
           }
         }
       `;
       try {
         const data = await graphQLCommand(query);
-        // Convert {id, name} to {_id, name} for consistency
+
+        // Map fetched categories to the state structure
         const catObjects = data.categories.map((cat) => ({
-          _id: cat.id,
-          name: cat.name,
+          _id: cat.id, // MongoDB ID
+          name: cat.name, // Category Name
+          categoryImage: cat.categoryImage || "", // Category Image
+          categoryID: cat.categoryID || "", 
+          description:cat.description || ""// Category ID (fallback to empty string if not present)
         }));
+
         setCategories(catObjects);
+        console.log("Fetched Categories:", catObjects);
       } catch (err) {
         console.error("Error fetching categories:", err);
       }

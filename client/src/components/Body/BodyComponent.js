@@ -24,11 +24,11 @@ const BodyComponent = () => {
     { path: "/login", element: <LoginComponent /> },
     { path: "/browse", element: <BrowseComponent /> },
     { path: "/", element: <HomeComponent /> },
-    { path: "/products", element: <ProductPage /> },
-    { path: "/category/:categoryName", element: <ProductPage /> },
-    { path: "/products/:gender/", element: <ProductPage /> },
+    { path: "/products/:categoryName", element: <ProductPage /> },
+   
+    
     {
-      path: "/category/:categoryName/:id",
+      path: "/products/:categoryName/:id",
       element: <ProductDetailComponent />,
     },
     { path: "/cart", element: <CartComponent /> },

@@ -10,7 +10,6 @@ import {
 import { graphQLCommand } from "../../util";
 import { useNavigate } from "react-router-dom";
 
-
 const LoginComponent = () => {
   const [isSignInForm, setSignInForm] = useState(true);
   const email = useRef(null);
@@ -20,7 +19,8 @@ const LoginComponent = () => {
   const userId = useRef(null);
   const address = useRef(null);
   const [errorMsg, setErrorMsg] = useState("");
-const navigate=useNavigate();
+  const navigate = useNavigate();
+
   const toggleSignInForm = () => {
     setSignInForm(!isSignInForm);
     setErrorMsg(""); // Clear error messages when toggling forms
@@ -38,17 +38,24 @@ const navigate=useNavigate();
                 id
                 fullName
                 email
+                userId
               }
             }
           }
         `;
-        const variables = { email: email.current.value, password: password.current.value };
+        const variables = {
+          email: email.current.value,
+          password: password.current.value,
+        };
         const response = await graphQLCommand(query, variables);
-
-        alert(response.login.message);
-        navigate("/")
-        console.log("User Logged In:", response.login.user);
-        
+  
+        if (response.login.user) {
+          // Save userId and email in localStorage
+          localStorage.setItem("userId", response.login.user.userId);
+          localStorage.setItem("userEmail", response.login.user.email);
+          alert(response.login.message);
+          navigate("/"); // Redirect to home or any desired route
+        }
       } catch (error) {
         setErrorMsg(error.message);
       }
@@ -58,7 +65,7 @@ const navigate=useNavigate();
         setErrorMsg("Passwords do not match.");
         return;
       }
-
+  
       try {
         const query = `
           mutation ($fullName: String!, $userId: String!, $email: String!, $password: String!, $address: String) {
@@ -72,7 +79,7 @@ const navigate=useNavigate();
             }
           }
         `;
-
+  
         const variables = {
           fullName: fullName.current.value,
           userId: userId.current.value,
@@ -80,19 +87,21 @@ const navigate=useNavigate();
           password: password.current.value,
           address: address.current.value,
         };
-
+  
         const response = await graphQLCommand(query, variables);
-        alert(response.signup.message);
+        if (response.signup.user) {
+          alert(response.signup.message);
+          toggleSignInForm(); // Switch to Sign In form after successful signup
+        }
       } catch (error) {
         setErrorMsg(error.message);
       }
     }
   };
+  
 
   return (
-    <div
-      className="relative min-h-screen flex justify-center items-center bg-gradient-to-b from-gray-50 to-yellow-100"
-    >
+    <div className="relative min-h-screen flex justify-center items-center bg-gradient-to-b from-gray-50 to-yellow-100">
       {/* Background Icons */}
       {[
         { Icon: FiSmartphone, color: "#FF5733", top: "10%", left: "15%" },

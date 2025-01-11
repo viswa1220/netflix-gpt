@@ -6,6 +6,7 @@ const productSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  productId: { type: String, required: true, trim: true },
   price: {
     type: Number,
     required: true,
@@ -28,18 +29,7 @@ const productSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
-  features: [
-    {
-      type: String,
-      trim: true,
-    },
-  ],
-  colors: [
-    {
-      color: { type: String, trim: true },
-      image: { type: String },
-    },
-  ],
+  
   mainImage: {
     type: String,
   },
@@ -63,11 +53,7 @@ const productSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  trendingStatus: {
-    type: Boolean,
-    default: false,
-  },
-  reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: "Review" }], // Add this field
+  reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: "Review" }],
   createdAt: {
     type: Date,
     default: Date.now,
@@ -78,4 +64,3 @@ const productSchema = new mongoose.Schema({
 const Product = mongoose.model("Product", productSchema);
 
 module.exports = Product;
-

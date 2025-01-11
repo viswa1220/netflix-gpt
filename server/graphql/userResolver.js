@@ -43,6 +43,7 @@ const userResolver = {
           id: user.id,
           fullName: user.fullName,
           email: user.email,
+          userId: user.userId,
           address: user.address,
         },
       };

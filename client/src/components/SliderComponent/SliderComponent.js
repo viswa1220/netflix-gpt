@@ -1,41 +1,12 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Slider from "react-slick";
+import { graphQLCommand } from "../../util";
 
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-const sliderItems = [
-  {
-    category: "Creativity",
-    headline: "Take your inner artist out and about.",
-    image: "/airpod.png",
-  },
-  {
-    category: "Learning",
-    headline: "Your classroom can be anywhere.",
-    image: "/smartwatch.png",
-  },
-  {
-    category: "Entertainment",
-    headline: "Kick back. Tune in. Game on.",
-    image: "/headphones.png",
-  },
-  {
-    category: "Combos",
-    headline: "Everything in one place, unbeatable deals.",
-    image: "/combos.png",
-  },
-  {
-    category: "Shoes",
-    headline: "Step up your style wherever you go.",
-    image: "/shoes.png",
-  },
-  {
-    category: "Covers & Straps",
-    headline: "Protection meets fashion for every device.",
-    image: "/cs.png",
-  },
-];
+
+
 
 // Custom arrow components (optional)
 const NextArrow = (props) => {
@@ -88,6 +59,39 @@ const PrevArrow = (props) => {
 
 const SliderComponent = () => {
   const navigate = useNavigate();
+  const [categories, setCategories] = useState([]);
+  const fetchCategories = async () => {
+    const query = `
+      query {
+        categories {
+          id
+          name
+          categoryImage
+          categoryID
+          description
+        }
+      }
+    `;
+    try {
+      const data = await graphQLCommand(query); 
+      if (data && data.categories) {
+        setCategories(
+          data.categories.map((category) => ({
+            id: category.id,
+            name: category.name,
+            categoryImage: category.categoryImage,
+            description: category.description || "Explore our products",
+          }))
+        );
+      }
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   // react-slick settings
   const settings = {
@@ -123,7 +127,7 @@ const SliderComponent = () => {
   // Handle card click
   const handleClick = (categoryName) => {
     // Example: navigate to a specific route or do something else
-    navigate(`/category/${categoryName}`);
+    navigate(`/products/${categoryName}`);
   };
 
   return (
@@ -137,7 +141,7 @@ const SliderComponent = () => {
 
       <div className="relative px-8 md:px-16 lg:px-24 xl:px-32 pb-8">
         <Slider {...settings}>
-          {sliderItems.map((item, idx) => (
+          {categories.map((item, idx) => (
             <div key={idx} className="px-2">
               <div
                 className="
@@ -154,12 +158,12 @@ to-transparent
 
                   
                 "
-                onClick={() => handleClick(item.category)}
+                onClick={() => handleClick(item.name)}
               >
                 {/* Background Image */}
                 <img
-                  src={item.image}
-                  alt={item.headline}
+                  src={item.categoryImage}
+                  alt={item.description}
                   className="
                     absolute 
                     inset-0 
@@ -194,10 +198,10 @@ to-transparent
   "
                 >
                   <p className="text-xs uppercase font-semibold opacity-90">
-                    {item.category}
+                    {item.name}
                   </p>
                   <h3 className="text-xl md:text-2xl font-bold leading-tight mt-1">
-                    {item.headline}
+                    {item.description}
                   </h3>
                 </div>
 

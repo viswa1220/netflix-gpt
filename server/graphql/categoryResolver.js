@@ -10,7 +10,7 @@ const categoryResolver = {
     // Fetch a single category by name
     getCategoryByName: async (_, { name }) => {
       try {
-        const category = await Category.findOne({ name: name });
+        const category = await Category.findOne({ name });
         if (!category) {
           throw new Error("Category not found");
         }
@@ -22,39 +22,49 @@ const categoryResolver = {
   },
 
   Mutation: {
-    // Add a new category by name
-    addCategory: async (_, { name }) => {
-      const existingCategory = await Category.findOne({ name });
+    // Add a new category
+    addCategory: async (_, { name, categoryImage, categoryID,description }) => {
+      const existingCategory = await Category.findOne({ categoryID });
       if (existingCategory) {
-        throw new Error("Category already exists");
+        throw new Error("Category with this categoryID already exists");
       }
-      const category = new Category({ name });
+
+      const category = new Category({
+        name,
+        categoryImage,
+        categoryID,
+        description
+      });
       return await category.save();
     },
 
-    // Update an existing category by _id
-    updateCategory: async (_, { id, name }) => {
+    // Update an existing category by id
+    updateCategory: async (_, { id, name, categoryImage, categoryID,description }) => {
       const category = await Category.findById(id);
       if (!category) {
         throw new Error("Category not found");
       }
 
-      // Change the name of the category
-      category.name = name;
+      // Update fields
+      if (name) category.name = name;
+      if (categoryImage) category.categoryImage = categoryImage;
+      if (categoryID) category.categoryID = categoryID;
+      if(description)category.description=description;
+
       await category.save();
       return category;
     },
 
-    // Delete a category by _id
+    // Delete a category by id
     deleteCategory: async (_, { id }) => {
       const category = await Category.findById(id);
       if (!category) {
         throw new Error("Category not found");
       }
-
+    
       await category.delete();
       return { message: "Category deleted successfully" };
-    },
+    },    
   },
 };
 

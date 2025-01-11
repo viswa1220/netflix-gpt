@@ -3,9 +3,68 @@ const Category = require("../models/Category");
 const Review = require("../models/Review");
 const { Types } = require("mongoose");
 
+const generateUniqueProductId = async (name) => {
+  const baseProductId = name.substring(0, 4).toLowerCase(); // Take the first 4 characters of the product name
+  let uniqueId = 1;
+
+  let generatedProductId;
+  do {
+    generatedProductId = `${baseProductId}${uniqueId.toString().padStart(2, "0")}`; // Format: first4chars + padded number (e.g., airp01)
+    const existingProduct = await Product.findOne({ productId: generatedProductId });
+    if (!existingProduct) break; // Ensure the ID is unique
+    uniqueId++;
+  } while (true);
+
+  return generatedProductId;
+};
+
 const productResolver = {
   Query: {
-    // Fetch all products
+    // Other queries remain the same...
+    productsByCategory: async (_, { name }) => {
+      try {
+        // Find the category based on the name
+        const category = await Category.findOne({ name });
+        if (!category) {
+          throw new Error("Category not found");
+        }
+  
+        // Find all products linked to the category
+        const products = await Product.find({ productCategory: category._id })
+          .populate("productCategory", "id name");
+  
+        return products.map((product) => ({
+          ...product.toObject(),
+          id: product._id.toString(), // Convert _id to id
+          productCategory: {
+            ...product.productCategory.toObject(),
+            id: product.productCategory._id.toString(),
+          },
+        }));
+      } catch (error) {
+        console.error("Error fetching products by category:", error);
+        throw new Error("Failed to fetch products by category.");
+      }
+    },
+    getAllProducts: async () => {
+      try {
+        // Fetch products and populate both 'productCategory' and 'reviews'
+        const products = await Product.find()
+          .populate("productCategory") 
+          .populate({
+            path: "reviews", 
+            select: "rating comment", 
+          });
+
+        if (!products || products.length === 0) {
+          console.log("No products found in the database.");
+        }
+        return products;
+      } catch (error) {
+        console.error("Error fetching all products:", error);
+        throw new Error("Failed to fetch products.");
+      }
+    },
     products: async () => {
       try {
         const products = await Product.find()
@@ -29,57 +88,7 @@ const productResolver = {
         throw new Error("Failed to fetch products.");
       }
     },
-    getAllProducts: async () => {
-      try {
-        // Fetch products and populate both 'productCategory' and 'reviews'
-        const products = await Product.find()
-          .populate("productCategory") 
-          .populate({
-            path: "reviews", 
-            select: "rating comment", 
-          });
 
-        if (!products || products.length === 0) {
-          console.log("No products found in the database.");
-        }
-        return products;
-      } catch (error) {
-        console.error("Error fetching all products:", error);
-        throw new Error("Failed to fetch products.");
-      }
-    },
-
-    // Fetch products by category name (if name is "All", return all products)
-    productsByCategory: async (_, { name }) => {
-      try {
-        if (name === "All") {
-          const products = await Product.find({
-            productCategory: category._id,
-          }).populate("productCategory");
-
-          return products;
-        }
-        const reviews = await Review.find({ productId: id }).sort({
-          createdAt: -1,
-        });
-        const category = await Category.findOne({ name });
-        if (!category) {
-          console.error(`Category "${name}" not found`);
-          throw new Error("Category not found");
-        }
-
-        const products = await Product.find({
-          productCategory: category._id,
-        }).populate("productCategory");
-        console.log(`Fetched products for category "${name}":`, products);
-        return products;
-      } catch (error) {
-        console.error("Error fetching products by category name:", error);
-        throw new Error("Failed to fetch products by category");
-      }
-    },
-
-    // Fetch a product by ID
     getProductById: async (_, { id }) => {
       try {
         const product = await Product.findById(id).populate("productCategory");
@@ -108,89 +117,13 @@ const productResolver = {
         throw new Error("Failed to fetch product");
       }
     },
-    productsByCategory: async (_, { name }) => {
-      try {
-        if (name === "All") {
-          const products = await Product.find().populate("productCategory");
-
-          // Fetch reviews for each product and include them
-          const productsWithReviews = await Promise.all(
-            products.map(async (product) => {
-              const reviews = await Review.find({
-                productId: product._id,
-              }).sort({
-                createdAt: -1,
-              });
-              return {
-                ...product.toObject(),
-                id: product._id.toString(),
-                productCategory: product.productCategory
-                  ? {
-                      ...product.productCategory.toObject(),
-                      id: product.productCategory._id.toString(),
-                    }
-                  : null,
-                reviews: reviews.map((review) => ({
-                  ...review.toObject(),
-                  id: review._id.toString(),
-                })),
-              };
-            })
-          );
-
-          return productsWithReviews;
-        }
-
-        const category = await Category.findOne({ name });
-        if (!category) {
-          console.error(`Category "${name}" not found`);
-          throw new Error("Category not found");
-        }
-
-        const products = await Product.find({
-          productCategory: category._id,
-        }).populate("productCategory");
-
-        // Fetch reviews for each product and include them
-        const productsWithReviews = await Promise.all(
-          products.map(async (product) => {
-            const reviews = await Review.find({ productId: product._id }).sort({
-              createdAt: -1,
-            });
-            return {
-              ...product.toObject(),
-              id: product._id.toString(),
-              productCategory: product.productCategory
-                ? {
-                    ...product.productCategory.toObject(),
-                    id: product.productCategory._id.toString(),
-                  }
-                : null,
-              reviews: reviews.map((review) => ({
-                ...review.toObject(),
-                id: review._id.toString(),
-              })),
-            };
-          })
-        );
-
-        console.log(
-          `Fetched products for category "${name}":`,
-          productsWithReviews
-        );
-        return productsWithReviews;
-      } catch (error) {
-        console.error("Error fetching products by category name:", error);
-        throw new Error("Failed to fetch products by category");
-      }
-    },
   },
 
   Mutation: {
     // Add a new product
     addProduct: async (_, { input }) => {
       try {
-        const { name, price, productCategory,description } = input;
+        const { name, price, productCategory, description } = input;
 
         // Validate required fields
         if (!name || !price || !productCategory) {
@@ -205,11 +138,15 @@ const productResolver = {
           throw new Error("Invalid productCategory: Category does not exist.");
         }
 
+        // Generate a unique productId
+        const productId = await generateUniqueProductId(name);
+
         // Prepare product data
         const productData = {
           ...input,
+          productId,
           productCategory: categoryExists._id,
-          description: description ? description : "", // Make sure you're saving the correct category _id
+          description: description || "",
           mainImage: input.mainImage || "",
           sliderImages: input.sliderImages || [],
           video: input.video || "",
@@ -234,7 +171,7 @@ const productResolver = {
     // Update a product
     updateProduct: async (_, { id, input }) => {
       try {
-        const product = await Product.findById(id);
+        const product = await Product.findOne({ productId: id });
         if (!product) {
           throw new Error("Product not found.");
         }
@@ -259,7 +196,7 @@ const productResolver = {
     // Delete a product
     deleteProduct: async (_, { id }) => {
       try {
-        const product = await Product.findById(id);
+        const product = await Product.findOne({ productId: id });
         if (!product) {
           throw new Error("Product not found.");
         }

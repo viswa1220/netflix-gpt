@@ -21,7 +21,7 @@ type Query {
   getReviewsByProduct(productId: ID!): [Review!]!
 
   # Get products by category name (using category name as input)
-  getProductsByCategoryName(name: String!): [Product]
+  getProductsByCategoryName(name: String!): [Product!]!
 
   # Fetch all products (for filter-based rendering)
   getAllProducts: [Product]
@@ -42,14 +42,14 @@ type Mutation {
     userId: String!
     email: String!
     password: String!
-    address: String!
+    address: String
   ): AuthResponse!
 
   login(email: String!, password: String!): AuthResponse!
 
   # Category mutations
-  addCategory(name: String!): Category!
-  updateCategory(id: ID!, name: String!): Category!
+   addCategory(name: String!, categoryImage: String!, categoryID: String!,description:String!): Category
+  updateCategory(id: ID!, name: String!, categoryImage: String!, categoryID: String!,description:String!): Category
   deleteCategory(id: ID!): MessageResponse!
 
   # Product mutations
@@ -66,29 +66,32 @@ type User {
   fullName: String!
   userId: String!
   email: String!
-  address: String!
+  address: String
 }
 
 type Category {
   id: ID!
   name: String!
   createdAt: String!
+  categoryImage:String
+  categoryID:String!
+  description:String!
 }
 
 type Product {
   id: ID!
+  productId:String!
   name: String!
   price: Float!
   availableCount: Int!
   offer: String
   productCategory: Category
   description: String
-  features: [String!]!
-  colors: [ColorVariant!]!
+ 
   mainImage: String
   sliderImages: [String!]
   video: String
-  sizes: [String!]
+  sizes: [String]
   gender: String!
   Brand: String!
   saleStatus: Boolean
@@ -105,12 +108,11 @@ input ProductInput {
   offer: String
   productCategory: ID # Reference to Category ID
   description: String
-  features: [String!]!
-  colors: [ColorVariantInput!]!
+ 
   mainImage: String
   sliderImages: [String!]
   video: String
-  sizes: [String!]
+  sizes: [String]
   Brand: String!
   gender: String!
   saleStatus: Boolean
@@ -150,4 +152,37 @@ input ReviewInput {
   name: String! # Name of the reviewer
   comment: String!
   rating: Int!
+}
+type CartItem {
+  id: ID!
+  userId: ID!
+  productId: ID!
+  name: String!
+  price: Float!
+  offer: Float
+  quantity: Int!
+  size: String
+  image: String
+  categoryName: String
+}
+
+input CartItemInput {
+  productId: ID!
+  name: String!
+  price: Float!
+  offer: Float
+  quantity: Int!
+  size: String
+  image: String
+  categoryName: String
+}
+
+type Query {
+  getCart(userId: ID!): [CartItem!]!
+}
+
+type Mutation {
+  addToCart(userId: ID!, input: CartItemInput!): CartItem
+  updateCartItem(userId: ID!, itemId: ID!, quantity: Int!): CartItem
+  removeFromCart(userId: ID!, itemId: ID!): String
 }

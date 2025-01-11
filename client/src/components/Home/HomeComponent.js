@@ -10,12 +10,10 @@ const HomeComponent = () => {
   const [products, setProducts] = useState([]);
   const [recProducts, setRecProducts] = useState([]);
   const navigate = useNavigate();
-
-  // 1. Slider Data: Replace these slides with your own images & text
   const slides = [
     {
       id: 1,
-      image: "hero_image.png", // Example image; replace with your path
+      image: "hero_image.png", 
       headline: "FREE Galaxy S22",
       subHeadline: "with our 50GB Airtime Plan.",
       description:
@@ -54,7 +52,7 @@ const HomeComponent = () => {
     setCurrentSlide((prev) => (prev === 0 ? slideCount - 1 : prev - 1));
   };
 
-  // 3. Fetch Product Details (existing logic)
+  
   const fetchProductDetails = async () => {
     const query = `
       query {
@@ -73,15 +71,20 @@ const HomeComponent = () => {
         }
       }
     `;
-    const response = await graphQLCommand(query);
-    setRecProducts(response.getAllProducts);
-
-    const saleProducts = response.getAllProducts.filter(
-      (product) => product.saleStatus
-    );
-    setProducts(saleProducts);
+    try {
+      const response = await graphQLCommand(query);
+      const allProducts = response.getAllProducts || [];
+  
+      // Filter products with saleStatus === true
+      const saleProducts = allProducts.filter((product) => product.saleStatus);
+  
+      setProducts(saleProducts); // Update the sale products in state
+      setRecProducts(allProducts); // Update the full products in the recommendation state
+    } catch (error) {
+      console.error("Error fetching product details:", error.message);
+    }
   };
-
+  
   useEffect(() => {
     fetchProductDetails();
     // eslint-disable-next-line
@@ -147,7 +150,7 @@ const HomeComponent = () => {
                         animationName: "slideInUp",
                         animationDuration: "1s",
                         animationFillMode: "both",
-                        animationIterationCount: 1 
+                        animationIterationCount: 1,
                       }}
                       className={`
                         w-full h-full  object-contain
@@ -238,16 +241,19 @@ const HomeComponent = () => {
       {/* Optional Slider Below (if you want both sliders) */}
       <SliderComponent />
 
-      {/* Recommendations Section */}
-       <RecommendationSection products={recProducts} /> 
+     
 
       {/* Sale Section */}
-      <section className="py-10 px-8 mx-8">
+     {/* Sale Section */}
+<section className="py-10 px-8 mx-8">
   <h2 className="text-3xl md:text-4xl font-bold text-center mb-8">
     Big Savings on Big SALE!!!
   </h2>
-  <div
-    className="
+
+  {/* Check if there are products with saleStatus */}
+  {products.length > 0 ? (
+    <div
+      className="
       grid 
       grid-cols-1 
       sm:grid-cols-2 
@@ -256,51 +262,50 @@ const HomeComponent = () => {
       gap-6 
       w-full
     "
-    
-  >
-    {products.map((item) => (
-      <div
-        key={item.id}
-        className="
+    >
+      {products.map((item) => (
+        <div
+          key={item.id}
+          className="
           relative 
           w-full 
           bg-gray-100 
           rounded-lg 
           overflow-hidden
           aspect-square
-             transform
+          transform
           transition
           duration-300
           hover:scale-105
           cursor-pointer
         "
-        onClick={() => {
-          navigate(`/category/${item.productCategory.name}/${item.id}`);
-        }}
-      >
-        {/* Background Image */}
-        <img
-          src={item.mainImage}
-          alt={item.name}
-          className="
+          onClick={() => {
+            navigate(`/category/${item.productCategory.name}/${item.id}`);
+          }}
+        >
+          {/* Background Image */}
+          <img
+            src={item.mainImage}
+            alt={item.name}
+            className="
             absolute 
             inset-0 
             w-full 
             h-full 
             object-cover
           "
-        />
+          />
 
-        {/* Top: Product Name */}
-        <div className="absolute top-2 left-2">
-          <h3 className=" text-white px-2 py-1  text-sm sm:text-base">
-            {item.name}
-          </h3>
-        </div>
+          {/* Top: Product Name */}
+          <div className="absolute top-2 left-2">
+            <h3 className="text-white px-2 py-1 text-sm sm:text-base">
+              {item.name}
+            </h3>
+          </div>
 
-        {/* Bottom Overlay with Details */}
-        <div
-          className="
+          {/* Bottom Overlay with Details */}
+          <div
+            className="
           absolute
           bottom-0
           left-0
@@ -312,40 +317,45 @@ const HomeComponent = () => {
           text-white
           flex
           flex-col
-        
           gap-2
         "
-        >
-          {/* Pricing */}
-          <div className="flex items-center">
-            {item.price && (
-              <span className="text-sm font-bold mr-2">
-                ₹ {item.price}
-              </span>
-            )}
-            <span className="text-sm font-bold">{item.newPrice}</span>
-          </div>
-
-          {/* Ratings */}
-          {item.rating && (
+          >
+            {/* Pricing */}
             <div className="flex items-center">
-              <span className="text-yellow-400 mr-1">
-                {"★".repeat(Math.floor(item.rating))}
-              </span>
-              <span className="text-gray-300">
-                {"★".repeat(5 - Math.floor(item.rating))}
-              </span>
+              {item.price && (
+                <span className="text-sm font-bold mr-2">
+                  ₹ {item.price}
+                </span>
+              )}
+              <span className="text-sm font-bold">{item.newPrice}</span>
             </div>
-          )}
+
+            {/* Ratings */}
+            {item.rating && (
+              <div className="flex items-center">
+                <span className="text-yellow-400 mr-1">
+                  {"★".repeat(Math.floor(item.rating))}
+                </span>
+                <span className="text-gray-300">
+                  {"★".repeat(5 - Math.floor(item.rating))}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    ))}
-  </div>
+      ))}
+    </div>
+  ) : (
+    // If no products with saleStatus, display a message
+    <div className="text-center text-gray-500 text-lg">
+      No products available on sale at the moment.
+    </div>
+  )}
 </section>
 
 
       {/* Trending Products Section */}
-    <Testimonial></Testimonial>
+      <Testimonial></Testimonial>
     </div>
   );
 };

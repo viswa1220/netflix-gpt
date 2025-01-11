@@ -17,11 +17,8 @@ const ADD_PRODUCT_MUTATION = `
         name
       }
       description
-      features
-      colors {
-        color
-        image
-      }
+    
+      
       mainImage
       sliderImages
       video
@@ -43,8 +40,8 @@ const ProductManagement = ({ categories }) => {
     offer: "",
     productCategory: "",
     description: "",
-    features: [""],
-    colors: [{ color: "", image: null }],
+  
+   
     mainImage: null,
     sliderImages: [],
     video: null,
@@ -71,39 +68,48 @@ const ProductManagement = ({ categories }) => {
     file,
     uploadPreset = "scroll_and_shop",
     cloudName = "dhpdhm86p",
-    resourceType = "image"
+    resourceType = "image",
+    customPublicId = null // Optional: Use a custom public ID
   ) => {
-    // 1) If we've already uploaded a file with this exact name, reuse the URL.
+    // Check if the file is already uploaded (cached)
     if (uploadCache[file.name]) {
       console.log(`Reusing cached URL for file: ${file.name}`);
       return uploadCache[file.name];
     }
-
-    // 2) Otherwise, upload it.
+  
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", uploadPreset);
-    formData.append("folder", "scroll_and_shop"); // optional folder
-
+    formData.append("folder", "scroll_and_shop"); // Optional: Specify folder
+  
+    // Use the provided custom public ID or fallback to the filename (without extension)
+    const publicId = customPublicId || file.name.split(".")[0]; // File name without extension
+    formData.append("public_id", publicId);
+  
     const url = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
-
+  
+    // Make the API request
     const response = await fetch(url, {
       method: "POST",
       body: formData,
     });
+  
     if (!response.ok) {
       throw new Error("Failed to upload file to Cloudinary");
     }
+  
     const data = await response.json();
-
-    // 3) Store the secure_url in the cache so we don't re-upload this filename
+  
+    // Cache the secure URL for future use
     setUploadCache((prev) => ({
       ...prev,
       [file.name]: data.secure_url,
     }));
-
-    return data.secure_url;
+  
+    return data.secure_url; // Return the secure URL of the uploaded file
   };
+  
+  
 
   // Handle text or numeric input changes
   const handleInputChange = (e) => {
@@ -123,33 +129,11 @@ const ProductManagement = ({ categories }) => {
     setProduct((prev) => ({ ...prev, sliderImages: files }));
   };
 
-  // Handle colors array (color + image)
-  const handleColorChange = (index, key, value) => {
-    const updatedColors = [...product.colors];
-    updatedColors[index][key] = value;
-    setProduct((prev) => ({ ...prev, colors: updatedColors }));
-  };
+ 
 
-  const handleAddColor = () => {
-    setProduct((prev) => ({
-      ...prev,
-      colors: [...prev.colors, { color: "", image: null }],
-    }));
-  };
+  
 
-  // Handle features array
-  const handleFeatureChange = (index, value) => {
-    const updated = [...product.features];
-    updated[index] = value;
-    setProduct((prev) => ({ ...prev, features: updated }));
-  };
 
-  const addFeature = () => {
-    setProduct((prev) => ({
-      ...prev,
-      features: [...prev.features, ""],
-    }));
-  };
 
   const handleSave = async () => {
     setLoading(true); // show loader/spinner
@@ -203,25 +187,8 @@ const ProductManagement = ({ categories }) => {
         }
       }
 
-      // Upload color images
-      if (Array.isArray(finalProduct.colors)) {
-        const updatedColors = [];
-        for (const colorObj of finalProduct.colors) {
-          if (colorObj.image instanceof File) {
-            const url = await uploadToCloudinary(
-              colorObj.image,
-              process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET,
-              process.env.REACT_APP_CLOUDINARY_CLOUD_NAME,
-              "image"
-            );
-            updatedColors.push({ color: colorObj.color, image: url });
-          } else {
-            // If it's already a string or null, keep it
-            updatedColors.push(colorObj);
-          }
-        }
-        finalProduct.colors = updatedColors;
-      }
+     
+    
 
       // Upload video if it's a File
       if (finalProduct.video instanceof File) {
@@ -244,11 +211,7 @@ const ProductManagement = ({ categories }) => {
         offer: finalProduct.offer || "",
         productCategory: finalProduct.productCategory || "",
         description: finalProduct.description || "",
-        features: finalProduct.features.filter((f) => f.trim() !== ""),
-        colors: finalProduct.colors.map((c) => ({
-          color: c.color || "",
-          image: c.image || "",
-        })),
+      
         mainImage: finalProduct.mainImage || "",
         sliderImages: finalProduct.sliderImages,
         video: finalProduct.video || "",
@@ -276,8 +239,7 @@ const ProductManagement = ({ categories }) => {
         offer: "",
         productCategory: "",
         description: "",
-        features: [""],
-        colors: [{ color: "", image: null }],
+       
         mainImage: null,
         sliderImages: [],
         video: null,
@@ -372,30 +334,7 @@ const ProductManagement = ({ categories }) => {
           className="border p-2 rounded col-span-1 md:col-span-2 w-full"
         />
 
-        {/* Features */}
-        <div className="col-span-1 md:col-span-2">
-          <label className="block font-semibold mb-2">Features</label>
-          {product.features.map((feature, index) => (
-            <div key={index} className="flex items-center gap-2 mb-2">
-              <input
-                type="text"
-                value={feature}
-                onChange={(e) => handleFeatureChange(index, e.target.value)}
-                placeholder={`Feature ${index + 1}`}
-                className="border p-2 rounded flex-grow"
-              />
-              {index === product.features.length - 1 && (
-                <button
-                  type="button"
-                  onClick={addFeature}
-                  className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-                >
-                  +
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
+       
 
         {/* Main Image */}
         <div>
@@ -422,38 +361,7 @@ const ProductManagement = ({ categories }) => {
           />
         </div>
 
-        {/* Colors and Images */}
-        <div className="col-span-1 md:col-span-2">
-          <label className="block font-semibold mb-2">Colors and Images</label>
-          {product.colors.map((colorObj, index) => (
-            <div key={index} className="flex items-center gap-4 mb-2">
-              <input
-                type="text"
-                placeholder="Color Name"
-                value={colorObj.color}
-                onChange={(e) =>
-                  handleColorChange(index, "color", e.target.value)
-                }
-                className="border p-2 rounded w-full"
-              />
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) =>
-                  handleColorChange(index, "image", e.target.files[0])
-                }
-                className="border p-2 rounded w-full"
-              />
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={handleAddColor}
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-          >
-            Add Color
-          </button>
-        </div>
+       
 
         {/* Video */}
         <div className="col-span-1 md:col-span-2">

@@ -1,39 +1,63 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { graphQLCommand } from "../../util"; // Replace with your GraphQL fetch function
 
 const NavBar = () => {
-  // Dummy nav links
-  const navLinks = [
-    {name: "All Products", href: "/products"},
-    { name: "Airpods", href: "/category/Airpods" },
-    { name: "Speakers", href: "/products/speakers" },
-    { name: "Headphones", href: "/products/headphones" },
-    { name: "Smartwatches", href: "/products/smartwatches" },
-    { name: "Chargers & Cables", href: "/products/chargers" },
-    { name: "Covers & Straps", href: "/products/covers" },
-    { name: "Shoes", href: "/products/shoes" },
-    { name: "cart", href: "/cart" }
-  ];
+  const [categories, setCategories] = useState([]);
+
+  // Fetch categories from backend
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const query = `
+        query {
+          categories {
+            id
+            name
+          }
+        }
+      `;
+      try {
+        const response = await graphQLCommand(query);
+        const fetchedCategories = response.categories || [];
+        // Add "All" category as the default option
+        const allCategories = [{ id: "all", name: "All" }, ...fetchedCategories];
+        setCategories(allCategories);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   return (
     <nav className="bg-[#252F3B] shadow">
       <div className="h-26 px-4 flex items-center justify-between">
         {/* Left: Logo / Brand */}
         <Link to="/" className="text-xl font-bold text-[#FFD65A]">
-         <img src="/logo.png" alt="logo for website"></img>
+          <img src="/logo.png" alt="logo for website" />
         </Link>
 
         {/* Middle: Nav links (hidden on small screens) */}
         <div className="hidden md:flex space-x-6">
-          {navLinks.map((link) => (
+          {/* Map over fetched categories */}
+          {categories.map((category) => (
             <Link
-              key={link.name}
-              to={link.href}
+              key={category.id}
+              to={
+                category.name === "All"
+                  ? "/products/All"
+                  : `/products/${encodeURIComponent(category.name)}`
+              }
               className="text-[#FFD65A] font-normal text-lg"
             >
-              {link.name}
+              {category.name}
             </Link>
           ))}
+          {/* Add additional static links */}
+          <Link to="/cart" className="text-[#FFD65A] font-normal text-lg">
+            Cart
+          </Link>
         </div>
 
         {/* Right: Login & Sign Up */}
