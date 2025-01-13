@@ -46,6 +46,9 @@ const productResolver = {
         throw new Error("Failed to fetch products by category.");
       }
     },
+    totalProducts: async () => {
+      return await Product.countDocuments();
+    },
     getAllProducts: async () => {
       try {
         // Fetch products and populate both 'productCategory' and 'reviews'

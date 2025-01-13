@@ -1,12 +1,17 @@
 type Query {
   # Fetch all users
   users: [User!]!
-
+    userByUserId(userId: String!): User
+    getTotalRevenue: Float
+     totalRevenue: Float
+  getTotalOrders: Int
   # Fetch all categories
   categories: [Category!]!
-
+getAllOrders: [Order!]!
   # Fetch all products
   products: [Product!]!
+  totalProducts: Int
+  totalOrdersByStatus: OrderStatusCounts!
 
   # Get a category by its name
   getCategoryByName(name: String!): Category
@@ -16,6 +21,7 @@ type Query {
 
   # Get a product by ID
   getProductById(id: ID!): Product
+   categoryWiseRevenue: [CategoryRevenue!]!
 
   # Get reviews by product ID
   getReviewsByProduct(productId: ID!): [Review!]!
@@ -35,6 +41,17 @@ type Query {
   ): [Product]
 }
 
+
+type CategoryRevenue {
+  category: String!
+  revenue: Float!
+}
+
+type OrderStatusCounts {
+  pending: Int!
+  completed: Int!
+}
+
 type Mutation {
   # User mutations
   signup(
@@ -47,9 +64,23 @@ type Mutation {
 
   login(email: String!, password: String!): AuthResponse!
 
+
+
+
   # Category mutations
-   addCategory(name: String!, categoryImage: String!, categoryID: String!,description:String!): Category
-  updateCategory(id: ID!, name: String!, categoryImage: String!, categoryID: String!,description:String!): Category
+  addCategory(
+    name: String!
+    categoryImage: String!
+    categoryID: String!
+    description: String!
+  ): Category
+  updateCategory(
+    id: ID!
+    name: String!
+    categoryImage: String!
+    categoryID: String!
+    description: String!
+  ): Category
   deleteCategory(id: ID!): MessageResponse!
 
   # Product mutations
@@ -73,21 +104,21 @@ type Category {
   id: ID!
   name: String!
   createdAt: String!
-  categoryImage:String
-  categoryID:String!
-  description:String!
+  categoryImage: String
+  categoryID: String!
+  description: String!
 }
 
 type Product {
   id: ID!
-  productId:String!
+  productId: String!
   name: String!
   price: Float!
   availableCount: Int!
   offer: String
   productCategory: Category
   description: String
- 
+
   mainImage: String
   sliderImages: [String!]
   video: String
@@ -95,7 +126,7 @@ type Product {
   gender: String!
   Brand: String!
   saleStatus: Boolean
-  rating:Float
+  rating: Float
   trendingStatus: Boolean
   createdAt: String!
   reviews: [Review!]
@@ -108,7 +139,7 @@ input ProductInput {
   offer: String
   productCategory: ID # Reference to Category ID
   description: String
- 
+
   mainImage: String
   sliderImages: [String!]
   video: String
@@ -185,4 +216,118 @@ type Mutation {
   addToCart(userId: ID!, input: CartItemInput!): CartItem
   updateCartItem(userId: ID!, itemId: ID!, quantity: Int!): CartItem
   removeFromCart(userId: ID!, itemId: ID!): String
+}
+
+# UserDetails Type
+type UserDetails {
+  userId: String!   # User ID
+  fullName: String!  # User's full name
+  email: String!     # User's email
+}
+
+# Cart Order Type
+type CartOrder {
+  productId: ID!       # Product ID (reference to the product)
+  name: String!        # Product name
+  price: Float!        # Product price
+  quantity: Int!       # Quantity of the product
+  size: String
+  offer:String!         # Optional size of the product
+  image: String        # Product image URL
+  categoryName: String! # Category name as a string
+}
+
+
+type Mutation {
+  deleteCart(userId: String!): Response
+}
+
+type Response {
+  success: Boolean!
+  message: String
+}
+
+# Payment Details Type
+type PaymentDetails {
+  method: String!    # Payment method (e.g., "Card", "UPI")
+  upiId: String      # UPI ID if payment method is UPI
+  cardDetails: CardDetails  # Card details if payment method is Card
+}
+
+# Card Details Type
+type CardDetails {
+  number: String     # Card number
+  expiry: String     # Card expiry date (MM/YY)
+  cvc: String        # Card CVC code
+}
+
+# Order Type
+type Order {
+  id: ID!                  # Order ID
+  userDetails: UserDetails! # Details of the user making the order
+  address: String!         # Delivery address as a single string
+  cart: [CartOrder!]!      # List of cart items associated with the order
+  paymentDetails: PaymentDetails!  # Payment details for the order
+  totalAmount: Float!    
+   status: String!  # Total amount for the order
+  createdAt: String!       # Timestamp for when the order was created
+}
+
+# Input for Creating an Order
+input OrderInput {
+  userDetails: UserDetailsInput!   # User details input
+  address: String!                 # Delivery address as a single string
+  cart: [CartItemInput!]!         # List of cart items input
+  paymentDetails: PaymentDetailsInput!  # Payment details input
+  totalAmount: Float!              # Total amount for the order
+}
+
+# UserDetails Input
+input UserDetailsInput {
+  userId: String!    # User ID
+  fullName: String!  # Full name
+  email: String!     # Email address
+}
+
+input CartOrderInput {
+  name: String!          # Product name
+  price: Float!          # Product price
+  quantity: Int!         # Quantity of the product
+  size: String           # Optional size of the product
+  image: String          # Product image URL
+   
+}
+
+
+# Payment Details Input
+input PaymentDetailsInput {
+  method: String!   # Payment method (e.g., "Card", "UPI")
+  upiId: String     # UPI ID if method is UPI
+  cardDetails: CardDetailsInput   # Card details (if method is Card)
+}
+
+# Card Details Input
+input CardDetailsInput {
+  number: String!  # Card number
+  expiry: String!  # Expiry date (MM/YY)
+  cvc: String!     # CVC code
+}
+
+# Query Types
+extend type Query {
+  getOrderById(orderId: ID!): Order!         # Fetch a single order by ID
+  getOrdersByUser(userId: String!): [Order!]! # Fetch all orders for a specific user
+}
+
+# Mutation Types
+extend type Mutation {
+  createOrder(input: OrderInput!): Order!   # Create a new order
+}
+type Mutation {
+  completeOrder(orderId: ID!): MutationResponse!
+}
+
+type MutationResponse {
+  success: Boolean!
+  message: String!
 }

@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
+const Order = require("./models/Order");
 
 dotenv.config();
 
@@ -36,6 +37,11 @@ const startServer = async () => {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
+
+    const result = await Order.updateMany(
+      { status: { $exists: false } },
+      { $set: { status: "Pending" } }
+    );
     console.log("Connected to MongoDB");
 
     // Start Apollo Server

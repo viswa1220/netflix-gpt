@@ -6,6 +6,18 @@ const userResolver = {
     users: async () => {
       return await User.find();
     },
+    userByUserId: async (_, { userId }) => {
+      try {
+        const user = await User.findOne({ userId });
+        if (!user) {
+          throw new Error("User not found.");
+        }
+        return user;
+      } catch (error) {
+        console.error(`Error fetching user with userId ${userId}:`, error.message);
+        throw new Error("Failed to fetch user.");
+      }
+    },
   },
   Mutation: {
     signup: async (_, { fullName, userId, email, password, address }) => {

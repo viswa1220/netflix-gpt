@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const CartItemSchema = new mongoose.Schema({
   userId: {
-    type: String, // Use userId as a string identifier
+    type: String, 
     required: true,
   },
   productId: {

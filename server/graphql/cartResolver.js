@@ -13,6 +13,34 @@ const cartResolver = {
   },
 
   Mutation: {
+    // Delete all cart items for a user
+    async deleteCart(_, { userId }) {
+      try {
+        // Check if the user has any cart items
+        const cartItems = await CartItem.find({ userId });
+        if (cartItems.length === 0) {
+          return {
+            success: false,
+            message: "No cart items found for this user.",
+          };
+        }
+
+        // Delete all the user's cart items
+        await CartItem.deleteMany({ userId });
+
+        return {
+          success: true,
+          message: "Cart items deleted successfully.",
+        };
+      } catch (error) {
+        console.error("Error deleting cart items:", error);
+        return {
+          success: false,
+          message: "Error deleting cart items.",
+        };
+      }
+    },
+
     async addToCart(_, { userId, input }) {
       try {
         // Validate that userId exists
