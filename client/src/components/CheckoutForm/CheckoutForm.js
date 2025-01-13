@@ -73,24 +73,69 @@ const CheckoutForm = () => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus(null);
-
+  
     if (!cartItems.length) {
       setStatus({ type: "error", message: "Your cart is empty. Add items before placing an order." });
       return;
     }
-
+  
     const errorMessage = validateForm();
     if (errorMessage) {
       setStatus({ type: "error", message: errorMessage });
       return;
     }
-
+  
     setLoading(true);
-
+  
+    // Calculate total amount based on cart items
+    const totalAmount = Math.max(
+      cartItems.reduce(
+        (total, item) =>
+          total + item.quantity * (item.price - (item.price * (item.offer || 0)) / 100),
+        0
+      ),
+      0
+    );
+  
+    // Prepare variables for the mutation
+    const variables = {
+      input: {
+        userDetails: {
+          userId,  // Should be fetched from localStorage
+          fullName: userDetails?.fullName,
+          email: userDetails?.email,
+        },
+        address: formData.address,  // Ensure this is a string
+        cart: cartItems.map((item) => ({
+          productId: item.productId,
+          name: item.name,
+          price: item.price,
+          offer: item.offer || 0,
+          quantity: item.quantity,
+          size: item.size || null,
+          image: item.image || null,
+          categoryName: item.categoryName || "Uncategorized",
+        })),
+        paymentDetails: {
+          method: formData.paymentMethod,
+          upiId: formData.paymentMethod === "UPI" ? formData.upiId.trim() : null,
+          cardDetails: formData.paymentMethod === "Card"
+            ? {
+                number: formData.cardNumber.trim(),
+                expiry: formData.cardExpiry.trim(),
+                cvc: formData.cardCvc.trim(),
+              }
+            : null,
+        },
+        totalAmount,  // Ensure totalAmount is passed
+      },
+    };
+  
+    console.log("Payload being sent to the server:", variables);  // Log the payload for verification
+  
     const createOrderMutation = `
       mutation CreateOrder($input: OrderInput!) {
         createOrder(input: $input) {
@@ -112,58 +157,15 @@ const CheckoutForm = () => {
         }
       }
     `;
-
-    const totalAmount = Math.max(
-      cartItems.reduce(
-        (total, item) =>
-          total + item.quantity * (item.price - (item.price * (item.offer || 0)) / 100),
-        0
-      ),
-      0
-    );
-
-    const variables = {
-      input: {
-        userDetails: {
-          userId,
-          fullName: userDetails.fullName,
-          email: userDetails.email,
-        },
-        address: formData.address.trim(),
-        cart: cartItems.map((item) => ({
-          productId: item.productId,
-          name: item.name,
-          price: item.price,
-          offer: item.offer || 0,
-          quantity: item.quantity,
-          size: item.size || null,
-          image: item.image || null,
-          categoryName: item.categoryName || "Uncategorized",
-        })),
-        paymentDetails: {
-          method: formData.paymentMethod,
-          upiId: formData.paymentMethod === "UPI" ? formData.upiId.trim() : null,
-          cardDetails:
-            formData.paymentMethod === "Card"
-              ? {
-                  number: formData.cardNumber.trim(),
-                  expiry: formData.cardExpiry.trim(),
-                  cvc: formData.cardCvc.trim(),
-                }
-              : null,
-        },
-        totalAmount,
-      },
-    };
-
+  
     try {
       const response = await graphQLCommand(createOrderMutation, variables);
-
+  
       if (!response.createOrder) {
         throw new Error("Failed to create order.");
       }
-
-      // Cart items deletion mutation after the order is successfully created
+  
+      // Clear cart after successful order placement
       const deleteCartMutation = `
         mutation DeleteCart($userId: String!) {
           deleteCart(userId: $userId) {
@@ -172,13 +174,12 @@ const CheckoutForm = () => {
           }
         }
       `;
-
-      // Call mutation to delete cart items
+  
       await graphQLCommand(deleteCartMutation, { userId });
-
-      // Clear cart items from the state
+  
+      // Clear cart from state
       setCartItems([]);
-      
+  
       setStatus({ type: "success", message: "Order placed successfully!" });
       navigate("/thankyou", {
         state: { orderId: response.createOrder.id, totalAmount },
@@ -189,6 +190,9 @@ const CheckoutForm = () => {
       setLoading(false);
     }
   };
+  
+  
+  
 
   const validateForm = () => {
     if (!formData.address.trim()) {

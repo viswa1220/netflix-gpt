@@ -18,6 +18,7 @@ import ProductListing from "../ProductListing/ProductListing";
 import OrderDetails from "../OrderDetails/OrderDetails";
 import UserProfile from "../UserProfile/UserProfile";
 import AdminBookingHistory from "../AdminBookingHistory/AdminBookingHistory";
+import AdminProductComponent from "../AdminProductComponent/AdminProductComponent";
 
 const BodyComponent = () => {
   const appRouter = createBrowserRouter([
@@ -41,6 +42,7 @@ const BodyComponent = () => {
     { path: "/orderDetail", element: <OrderDetails /> },
     { path: "/user", element: <UserProfile /> },
     { path: "/bookinghistory", element: <AdminBookingHistory /> },
+    { path: "/AdminProduct", element: <AdminProductComponent /> },
   ]);
 
   return (

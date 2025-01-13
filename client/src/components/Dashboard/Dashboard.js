@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { graphQLCommand } from "../../util";
+import { Link } from "react-router-dom";  // Importing Link for navigation
 import OrderDetails from "../OrderDetails/OrderDetails";
 
 const Dashboard = () => {
@@ -93,7 +94,7 @@ const Dashboard = () => {
       try {
         const [
           productData,
-          revenueData,
+          ,
           orderStatusData,
           ordersData
         ] = await Promise.all([
@@ -104,12 +105,12 @@ const Dashboard = () => {
         ]);
   
         setTotalProducts(productData.totalProducts);
-  
+ 
         // Filter completed orders
         const completedOrders = ordersData.getAllOrders.filter(order => order.status === "Completed");
   
         // Calculate total revenue from completed orders
-        setTotalRevenue(calculateTotalRevenue(completedOrders)); // Calculate total revenue from completed orders
+        setTotalRevenue(calculateTotalRevenue(completedOrders)); 
         setOrderStatusCounts(orderStatusData.totalOrdersByStatus);
         setTotalOrders(
           orderStatusData.totalOrdersByStatus.pending + orderStatusData.totalOrdersByStatus.completed
@@ -132,6 +133,25 @@ const Dashboard = () => {
       <h1 className="text-3xl font-bold text-center mb-8">
         <span className="bg-primaryBlack p-4 rounded-lg shadow-lg">Admin Dashboard</span>
       </h1>
+
+      {/* Sidebar Navigation */}
+      <div className="flex space-x-8 mb-8">
+        <Link to="/order-details">
+          <button className="p-3 bg-primaryBlack text-primaryYellow rounded-lg hover:shadow-xl">
+            Order Details
+          </button>
+        </Link>
+        <Link to="/manageProducts">
+          <button className="p-3 bg-primaryBlack text-primaryYellow rounded-lg hover:shadow-xl">
+            Manage Products
+          </button>
+        </Link>
+        <Link to="/edit-product">
+          <button className="p-3 bg-primaryBlack text-primaryYellow rounded-lg hover:shadow-xl">
+            Edit Product
+          </button>
+        </Link>
+      </div>
 
       {/* Metrics Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">

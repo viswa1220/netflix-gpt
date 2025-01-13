@@ -4,7 +4,7 @@ const categoryResolver = {
   Query: {
     // Fetch all categories sorted by creation date in descending order
     categories: async () => {
-      return await Category.find().sort({ createdAt: -1 });
+      return await Category.find();
     },
 
     // Fetch a single category by name

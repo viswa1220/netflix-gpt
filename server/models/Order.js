@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 
-
 const OrderSchema = new mongoose.Schema(
   {
     userDetails: {
@@ -23,10 +22,16 @@ const OrderSchema = new mongoose.Schema(
     },
     cart: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "CartItem", 
+        productId:String,
+        name: String,
+        price: Number,
+        quantity: Number,
+        size: String,
+        offer: Number,
+        image: String,
+        categoryName: String,
       },
-    ], 
+    ],
     paymentDetails: {
       method: { type: String, required: true },
       upiId: { type: String },
@@ -40,15 +45,15 @@ const OrderSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
     status: {
       type: String,
       enum: ["Pending", "Completed", "Canceled"],
       default: "Pending",
-    }, 
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
   { timestamps: true }
 );

@@ -225,15 +225,14 @@ type UserDetails {
   email: String!     # User's email
 }
 
-# Cart Order Type
 type CartOrder {
-  productId: ID!       # Product ID (reference to the product)
-  name: String!        # Product name
-  price: Float!        # Product price
-  quantity: Int!       # Quantity of the product
-  size: String
-  offer:String!         # Optional size of the product
-  image: String        # Product image URL
+productId:String!
+  name: String!          # Product name
+  price: Float!         # Product price
+  quantity: Int!        # Quantity of the product
+  size: String          # Optional size of the product
+  offer: Float!         # Discount on the product
+  image: String         # Product image URL
   categoryName: String! # Category name as a string
 }
 
@@ -261,18 +260,16 @@ type CardDetails {
   cvc: String        # Card CVC code
 }
 
-# Order Type
 type Order {
-  id: ID!                  # Order ID
+  id: ID!                # Order ID
   userDetails: UserDetails! # Details of the user making the order
-  address: String!         # Delivery address as a single string
-  cart: [CartOrder!]!      # List of cart items associated with the order
+  address: String!       # Delivery address as a single string
+  cart: [CartOrder!]!    # List of cart items associated with the order
   paymentDetails: PaymentDetails!  # Payment details for the order
-  totalAmount: Float!    
-   status: String!  # Total amount for the order
-  createdAt: String!       # Timestamp for when the order was created
+  totalAmount: Float!    # Total amount for the order
+  status: String!        # Status of the order (e.g., Pending, Completed)
+  createdAt: String!     # Timestamp for when the order was created
 }
-
 # Input for Creating an Order
 input OrderInput {
   userDetails: UserDetailsInput!   # User details input
