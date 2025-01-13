@@ -14,11 +14,11 @@ const ProductPage = () => {
   const [searchText, setSearchText] = useState("");
   const [priceRange, setPriceRange] = useState([0, 10000]);
 
-  // Read categoryName from the URL: "/products/:categoryName"
+ 
   const { categoryName } = useParams();
   const navigate = useNavigate();
 
-  /** 1. Fetch ALL products (GraphQL) */
+
   const fetchAllProducts = useCallback(async () => {
     const query = `
       query {
@@ -45,7 +45,7 @@ const ProductPage = () => {
       setFilteredProducts(allProds);
       console.log(allProds);
 
-      // Build unique categories
+    
       const categoryList = [
         ...new Set(allProds.map((p) => p.productCategory.name)),
       ];
@@ -57,11 +57,11 @@ const ProductPage = () => {
     }
   }, []);
 
-  /** 2. Fetch products by a specific category (GraphQL) */
+
   const fetchProductsByCategory = useCallback(
     async (catName) => {
       if (!catName || catName === "All") {
-        // If category is missing or "All", just fetch everything
+      
         fetchAllProducts();
         return;
       }

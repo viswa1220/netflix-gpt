@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import NavBar from "../NavBar/NavBar";
-import { CartContext } from "../../context/CartContext";
+
 import { graphQLCommand } from "../../util";
 import RelatedProductsSection from "../RelatedProductsSection/RelatedProductsSection";
 
@@ -25,8 +25,6 @@ const ProductDetailComponent = () => {
 
   // Related
   const [RelatedData, setRelatedData] = useState([]);
-
- 
 
   // Selected size
   const [selectedSize, setSelectedSize] = useState(null);
@@ -116,23 +114,22 @@ const ProductDetailComponent = () => {
     `;
     try {
       const response = await graphQLCommand(query);
-
-      const filteredData = response.getAllProducts
-      .filter((item) =>
-        categoryName === "All" || item.productCategory.name === categoryName
-      )
-      .filter((item) => item.id !== id) // Exclude the current product
-      .reduce((unique, current) => {
-        // Deduplicate based on `id`
-        if (!unique.some((item) => item.id === current.id)) {
-          unique.push(current);
-        }
-        return unique;
-      }, []);
-    
-    setRelatedData(filteredData);
    
-    
+      const filteredData = response.getAllProducts
+        .filter(
+          (item) =>
+            categoryName === "All" || item.productCategory.name === categoryName
+        )
+        .filter((item) => item.id !== id)
+        .reduce((unique, current) => {
+          if (!unique.some((item) => item.id === current.id)) {
+            unique.push(current);
+          }
+          return unique;
+        }, []);
+
+      setRelatedData(filteredData);
+      console.log(categoryName);
     } catch (error) {
       console.error("Error fetching products for related data:", error);
     }
@@ -143,8 +140,12 @@ const ProductDetailComponent = () => {
   }, [id]);
 
   useEffect(() => {
+    console.log(
+      `Fetching related products for category: ${categoryName} and id: ${id}`
+    );
     fetchAllProduct();
-  },[categoryName, id]);
+  }, [categoryName, id]);
+
   const fetchCart = async () => {
     const userId = localStorage.getItem("userId");
     if (!userId) return;
@@ -160,6 +161,7 @@ const ProductDetailComponent = () => {
     try {
       const response = await graphQLCommand(CART_QUERY, { userId });
       setCartItems(response.getCart || []);
+      console.log(categoryName);
     } catch (error) {
       console.error("Error fetching cart data:", error);
     }
@@ -172,7 +174,6 @@ const ProductDetailComponent = () => {
 
   // Check if product is already in cart
   const isInCart = cartItems.some((item) => item.productId === product?.id);
-
 
   const handleAddToCart = async () => {
     if (!product || product.availableCount === 0) {
@@ -281,7 +282,7 @@ const ProductDetailComponent = () => {
           </h1>
           {/* Add to Cart + Back Button */}
           <div className="flex flex-col lg:flex-row lg:space-x-4 mt-4 lg:mt-0">
-          <button
+            <button
               className={`
                 ${
                   isInCart
@@ -296,7 +297,7 @@ const ProductDetailComponent = () => {
                 rounded-md
               `}
               onClick={handleAddToCart}
-              disabled={isInCart} 
+              disabled={isInCart}
             >
               {isInCart ? "Already in Cart" : "Add to Cart"}
             </button>
@@ -357,12 +358,8 @@ const ProductDetailComponent = () => {
             </div>
           </div>
         )}
-        {/* Optionally show the categoryName for debugging */}
-        {/* <div className="text-sm text-gray-500">Category: {categoryName}</div> */}
 
-        {/* Main content: Left (slider) + Right (info card) */}
         <div className="flex flex-col lg:flex-row gap-4 ">
-          {/* Left side: main image / video + thumbnails */}
           <div className="flex-1 flex flex-col lg:flex-row gap-4">
             {/* Main Image/Video */}
             <div className="flex-1 flex items-center justify-center  rounded-md shadow-sm bg-primaryBlack">
@@ -579,6 +576,7 @@ const ProductDetailComponent = () => {
 
         {/* Related Products */}
         <div className="my-2">
+          {<>{console.log(categoryName, "from parent")}</>}
           <RelatedProductsSection
             RelatedProducts={RelatedData}
             category={categoryName}

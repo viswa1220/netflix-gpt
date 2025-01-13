@@ -6,6 +6,7 @@ import "slick-carousel/slick/slick-theme.css";
 
 const RelatedProductsSection = ({ RelatedProducts, categoryName }) => {
   const navigate = useNavigate();
+  
 
   // Custom Arrow for Slider Navigation
   const CustomArrow = ({ className, onClick }) => (
@@ -21,17 +22,17 @@ const RelatedProductsSection = ({ RelatedProducts, categoryName }) => {
   // Slider Settings
   const settings = {
     dots: false,
-    infinite: RelatedProducts.length > 4, // Infinite scroll only if >4 products
+    infinite: RelatedProducts.length > 4, 
     speed: 500,
-    slidesToShow: 4,// Show up to 4 slides
+    slidesToShow: 4,
     slidesToScroll: 1,
     responsive: [
       {
-        breakpoint: 1024, // Tablets
+        breakpoint: 1024, 
         settings: { slidesToShow: 2 },
       },
       {
-        breakpoint: 768, // Mobile
+        breakpoint: 768, 
         settings: { slidesToShow: 1 },
       },
     ],
@@ -61,11 +62,13 @@ const RelatedProductsSection = ({ RelatedProducts, categoryName }) => {
                   cursor-pointer
                   transition-all
                 "
-                onClick={() =>
-                  navigate(`/products/${categoryName}/${product.id}`)
-                }
+                onClick={() => {
+                  const currentCategoryName = categoryName || "All"; 
+                  navigate(`/products/${currentCategoryName}/${product.id}`);
+                }}
+                
               >
-                {/* Product Image */}
+               
                 <img
                   src={product.mainImage}
                   alt={product.name}
@@ -114,7 +117,7 @@ const RelatedProductsSection = ({ RelatedProducts, categoryName }) => {
                     <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.79 1.402 8.168L12 18.896l-7.336 3.872 1.402-8.168L.132 9.21l8.2-1.192z" />
                   </svg>
                   <span>
-                    {product.rating ? product.rating.toFixed(1) : "N/A"}
+                    {product.rating ? product.rating.toFixed(1) : "0"}
                   </span>
                 </div>
               </div>

@@ -180,62 +180,85 @@ const CartComponent = () => {
       <h1 className="text-3xl font-bold text-primaryBlack mb-4 text-center">
         Your Cart
       </h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-        {cartItems.map((item) => (
-          <div
-            key={item.id}
-            onClick={() =>
-              navigate(`/products/${item.categoryName}/${item.productId}`)
-            }
-            className="relative   flex flex-col items-center p-4 rounded-md shadow-md bg-primaryBlack cursor-pointer text-white"
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+  {cartItems.map((item) => (
+    <div
+      key={item.id}
+      className="relative w-full h-60 rounded-lg overflow-hidden shadow-md group bg-gray-200 cursor-pointer"
+      onClick={() =>
+        navigate(`/products/${item.categoryName}/${item.productId}`)
+      }
+    >
+      {/* Background Image */}
+      <img
+        src={item.image}
+        alt={item.name}
+        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+      />
+
+      {/* Overlay */}
+      <div
+        className="absolute inset-0 bg-black bg-opacity-60 flex flex-col justify-between p-4 opacity-100"
+      >
+        {/* Top Section */}
+        <div className="flex justify-between">
+          <h3 className="text-white text-lg font-bold truncate" title={item.name}>
+            {item.name}
+          </h3>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              removeFromCart(item.id);
+            }}
+            className="bg-gray-200 text-red-500 hover:text-red-700 w-8 h-8 rounded-full flex items-center justify-center shadow-md"
           >
-            {/* Remove Button */}
-            {/* Remove Button */}
+            ✕
+          </button>
+        </div>
+
+        {/* Middle Section: Price and Offer */}
+        <div>
+          <p className="text-yellow-400 text-md font-semibold">₹{item.price}</p>
+          {item.offer && (
+            <span className="text-red-400 text-xs font-medium">
+              {item.offer}% OFF
+            </span>
+          )}
+        </div>
+
+        {/* Bottom Section: Quantity Controls */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                removeFromCart(item.id);
+                updateQuantity(item, -1);
               }}
-              className="absolute top-2 right-2 bg-primaryYellow text-red-500 hover:text-red-700 w-8 h-8 rounded-full flex items-center justify-center shadow-md"
+              disabled={item.quantity === 1}
+              className="bg-yellow-400 text-black px-2 py-1 rounded text-sm"
             >
-              ✕ {/* Replace with an icon if needed */}
+              -
             </button>
-            <img
-              src={item.image}
-              alt={item.name}
-              className="w-full h-40 object-contain rounded-md"
-            />
-            <h2 className="text-lg font-bold mt-4">{item.name}</h2>
-            {item.size && (
-              <p className="text-sm text-gray-400">Size: {item.size}</p>
-            )}
-            <p className="text-lg font-bold mt-2">₹{item.price}</p>
-            <span>{item.discountedPrice}</span>
-            <div className="flex items-center space-x-2 mt-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  updateQuantity(item, -1);
-                }}
-                disabled={item.quantity === 1}
-                className="bg-primaryYellow text-primaryBlack rounded px-2"
-              >
-                -
-              </button>
-              <span>{item.quantity}</span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  updateQuantity(item, 1);
-                }}
-                className="bg-primaryYellow text-primaryBlack rounded px-2"
-              >
-                +
-              </button>
-            </div>
+            <span className="text-white">{item.quantity}</span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                updateQuantity(item, 1);
+              }}
+              className="bg-yellow-400 text-black px-2 py-1 rounded text-sm"
+            >
+              +
+            </button>
           </div>
-        ))}
+          <p className="text-sm text-white font-semibold">
+            Subtotal: ₹{(item.price * item.quantity).toFixed(2)}
+          </p>
+        </div>
       </div>
+    </div>
+  ))}
+</div>
+
       <button
         className="bg-primaryYellow text-black py-2 px-6 rounded-md mx-auto block mt-4"
         onClick={() => navigate("/products/All")}

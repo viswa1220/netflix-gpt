@@ -1,123 +1,221 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { graphQLCommand } from "../../util";
 
 const OrderDetails = () => {
-  const [orders, setOrders] = useState([
-    {
-      orderId: "ORD12345",
-      customerName: "John Doe",
-      orderDate: "2024-12-26",
-      status: "Processing",
-      totalAmount: 450.0,
-      items: [
-        { name: "Smartphone", quantity: 1, price: 300.0 },
-        { name: "Headphones", quantity: 2, price: 75.0 },
-      ],
-    },
-    {
-      orderId: "ORD12346",
-      customerName: "Jane Smith",
-      orderDate: "2024-12-27",
-      status: "Processing",
-      totalAmount: 120.0,
-      items: [
-        { name: "Running Shoes", quantity: 1, price: 120.0 },
-      ],
-    },
-  ]);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredOrders, setFilteredOrders] = useState([]);
+  const [orderStatus, setOrderStatus] = useState("Pending");
+  const [orderStatusCounts, setOrderStatusCounts] = useState({ pending: 0, completed: 0 });
+  const [expandedOrder, setExpandedOrder] = useState(null); // To track expanded orders
 
-  const [activeOrder, setActiveOrder] = useState(null);
+  // Fetch all orders and revenue
+  useEffect(() => {
+    const fetchOrdersAndRevenue = async () => {
+      const ordersQuery = `
+        query GetAllOrders {
+          getAllOrders {
+            id
+            userDetails {
+              fullName
+              email
+            }
+            address
+            cart {
+              name
+              price
+              quantity
+              image
+              categoryName
+            }
+            paymentDetails {
+              method
+              upiId
+            }
+            totalAmount
+            status
+          }
+        }
+      `;
+      const orderStatusQuery = `
+        query {
+          totalOrdersByStatus {
+            pending
+            completed
+          }
+        }
+      `;
+      try {
+        const [ordersResponse, orderStatusData] = await Promise.all([
+          graphQLCommand(ordersQuery),
+          graphQLCommand(orderStatusQuery),
+        ]);
 
-  const toggleAccordion = (orderId) => {
-    setActiveOrder((prevOrder) => (prevOrder === orderId ? null : orderId));
+        setOrders(ordersResponse.getAllOrders || []);
+        setLoading(false);
+        filterOrders("Pending", ordersResponse.getAllOrders);
+        setOrderStatusCounts(orderStatusData.totalOrdersByStatus);
+      } catch (error) {
+        console.error("Error fetching orders and revenue:", error.message);
+        setLoading(false);
+      }
+    };
+
+    fetchOrdersAndRevenue();
+  }, []);
+
+  // Filter orders based on selected status
+  const filterOrders = (status, allOrders) => {
+    const filtered = allOrders.filter((order) => order.status === status);
+    setFilteredOrders(filtered);
+    setOrderStatus(status);
   };
 
-  const markOrderComplete = (orderId) => {
-    setOrders((prevOrders) =>
-      prevOrders.map((order) =>
-        order.orderId === orderId ? { ...order, status: "Completed" } : order
-      )
-    );
-    setActiveOrder(null); // Optionally collapse the accordion after marking complete
+  // Handle search functionality
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // Toggle expanded order
+  const toggleAccordion = (orderId) => {
+    setExpandedOrder((prevOrder) => (prevOrder === orderId ? null : orderId));
+  };
+
+  const completeOrder = async (orderId) => {
+    const completeOrderMutation = `
+      mutation CompleteOrder($orderId: ID!) {
+        completeOrder(orderId: $orderId) {
+          success
+          message
+        }
+      }
+    `;
+
+    try {
+      const response = await graphQLCommand(completeOrderMutation, { orderId });
+
+      if (response.completeOrder.success) {
+        // Update the order status in the state
+        const updatedOrders = orders.map((order) =>
+          order.id === orderId ? { ...order, status: "Completed" } : order
+        );
+        setOrders(updatedOrders);
+
+        // Update the filtered orders to show in the completed section
+        filterOrders("Completed", updatedOrders);
+
+        // Update the counts
+        setOrderStatusCounts((prevCounts) => ({
+          pending: prevCounts.pending - 1,
+          completed: prevCounts.completed + 1,
+        }));
+
+        alert("Order marked as completed");
+      } else {
+        alert("Failed to complete order");
+      }
+    } catch (error) {
+      console.error("Error completing order:", error);
+      alert("Error completing order");
+    }
   };
 
   return (
-    <div className="p-6 bg-gray-100 shadow-md rounded-lg">
-      <h1 className="text-2xl font-bold mb-4 text-center">Order Details</h1>
-      <div className="overflow-x-auto">
-        <table className="table-auto w-full border-collapse border border-gray-300">
-          <thead className="bg-gray-200">
-            <tr>
-              <th className="border border-gray-300 px-4 py-2">Order ID</th>
-              <th className="border border-gray-300 px-4 py-2">Customer Name</th>
-              <th className="border border-gray-300 px-4 py-2">Order Date</th>
-              <th className="border border-gray-300 px-4 py-2">Status</th>
-              <th className="border border-gray-300 px-4 py-2">Total Amount</th>
-              <th className="border border-gray-300 px-4 py-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((order) => (
-              <>
-                <tr key={order.orderId} className="text-center">
-                  <td className="border border-gray-300 px-4 py-2">{order.orderId}</td>
-                  <td className="border border-gray-300 px-4 py-2">{order.customerName}</td>
-                  <td className="border border-gray-300 px-4 py-2">{order.orderDate}</td>
-                  <td
-                    className={`border border-gray-300 px-4 py-2 rounded ${
-                      order.status === "Processing"
-                        ? "bg-yellow-200 text-yellow-800"
-                        : "bg-green-200 text-green-800"
-                    }`}
-                  >
-                    {order.status}
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2">₹{order.totalAmount.toFixed(2)}</td>
-                  <td className="border border-gray-300 px-4 py-2">
-                    <button
-                      onClick={() => toggleAccordion(order.orderId)}
-                      className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                    >
-                      {activeOrder === order.orderId ? "Hide Items" : "View Items"}
-                    </button>
-                  </td>
-                </tr>
-
-                {/* Accordion Row */}
-                {activeOrder === order.orderId && (
-                  <tr key={`${order.orderId}-details`} className="bg-gray-50">
-                    <td colSpan="6" className="p-4">
-                      <h3 className="text-md font-bold mb-2">Order Items:</h3>
-                      <ul className="space-y-2">
-                        {order.items.map((item, index) => (
-                          <li
-                            key={index}
-                            className="flex justify-between border-b pb-2"
-                          >
-                            <span>{item.name}</span>
-                            <span>Qty: {item.quantity}</span>
-                            <span>₹{item.price.toFixed(2)}</span>
-                          </li>
-                        ))}
-                      </ul>
-                      <div className="mt-4 text-right">
-                        {order.status === "Processing" && (
-                          <button
-                            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-                            onClick={() => markOrderComplete(order.orderId)}
-                          >
-                            Mark as Complete
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </>
-            ))}
-          </tbody>
-        </table>
+    <div className="flex bg-white">
+    {/* Sidebar for Order Status */}
+    <div className="w-64 bg-primaryBlack text-white p-6 sticky top-0 left-0 h-screen">
+      <h3 className="text-xl font-semibold text-primaryYellow mb-6">Order Status</h3>
+      <div className="flex flex-col space-y-4">
+        <button
+          className={`p-3 rounded-md hover:bg-gray-700 transition-all duration-200 ${orderStatus === "Pending" ? "bg-primaryYellow text-primaryBlack" : ""}`}
+          onClick={() => filterOrders("Pending", orders)}
+        >
+          Pending <span className="text-primaryYellow bg-primaryBlack ml-3 p-1 rounded-lg shadow-xl">({orderStatusCounts.pending})</span>
+        </button>
+        <button
+          className={`p-3 rounded-md hover:bg-gray-700 transition-all duration-200 ${orderStatus === "Completed" ? "bg-primaryYellow text-primaryBlack" : ""}`}
+          onClick={() => filterOrders("Completed", orders)}
+        >
+          Completed <span className="text-primaryYellow bg-primaryBlack ml-3 p-1 rounded-lg shadow-xl">({orderStatusCounts.completed})</span>
+        </button>
       </div>
     </div>
+  
+    {/* Main content */}
+    <div className="w-full p-8">
+      <div className="flex justify-between items-center mb-8">
+        <h2 className="text-3xl font-semibold text-primaryYellow">Order Details</h2>
+        <input
+          type="text"
+          placeholder="Search by customer name..."
+          value={searchQuery}
+          onChange={handleSearch}
+          className="w-96 p-3 rounded-md bg-primaryBlack text-primaryYellow border border-primaryYellow focus:outline-none"
+        />
+      </div>
+  
+      {/* Orders */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredOrders.length > 0 ? (
+          filteredOrders.map((order) => (
+            <div key={order.id} className="bg-primaryBlack p-6 rounded-lg shadow-xl hover:shadow-2xl transition-all duration-300 text-white">
+              {/* Order Summary */}
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <p className="text-lg font-semibold">{order.userDetails.fullName}</p>
+                  <p className="text-sm">{order.userDetails.email}</p>
+                </div>
+                <p className={`text-sm font-semibold ${order.status === "Pending" ? "text-yellow-400" : "text-green-400"}`}>
+                  {order.status}
+                </p>
+              </div>
+              <p className="text-lg font-semibold mb-2">₹{order.totalAmount.toFixed(2)}</p>
+  
+              {/* Buttons */}
+              {order.status === "Pending" && (
+                <button
+                  onClick={() => completeOrder(order.id)}
+                  className="w-full bg-primaryYellow text-primaryBlack py-2 rounded-md hover:bg-yellow-600 transition-all duration-200 mb-2"
+                >
+                  Complete Order
+                </button>
+              )}
+              <button
+                onClick={() => toggleAccordion(order.id)}
+                className="w-full bg-primaryYellow text-primaryBlack py-2 rounded-md hover:bg-yellow-600 transition-all duration-200"
+              >
+                {expandedOrder === order.id ? "Hide Products" : "View Products"}
+              </button>
+  
+              {/* Accordion Content */}
+              {expandedOrder === order.id && (
+                <div className="mt-4 space-y-2">
+                  {order.cart.map((item, index) => (
+                    <div key={index} className="flex items-center justify-between bg-white text-primaryBlack rounded-md p-2 shadow">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-12 h-12 rounded-md object-cover"
+                      />
+                      <div className="flex-1 ml-3">
+                        <p className="font-semibold">{item.name}</p>
+                        <p className="text-sm">Qty: {item.quantity}</p>
+                      </div>
+                      <p className="font-bold">₹{(item.price * item.quantity).toFixed(2)}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))
+        ) : (
+          <div className="text-center text-gray-500 col-span-3">No orders found</div>
+        )}
+      </div>
+    </div>
+  </div>
+  
   );
 };
 

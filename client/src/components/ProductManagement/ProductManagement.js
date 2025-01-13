@@ -54,36 +54,33 @@ const ProductManagement = ({ categories }) => {
 
   // Loader state (for spinner overlay)
   const [loading, setLoading] = useState(false);
-
-  /**
-   * uploadCache: { [fileName]: "https://..." }
-   * A simple filename-based cache to avoid re-uploading the same file.
-   */
   const [uploadCache, setUploadCache] = useState({});
-
-  /**
-   * Upload a file to Cloudinary, unless we already cached this exact filename.
-   */
   const uploadToCloudinary = async (
     file,
     uploadPreset = "scroll_and_shop",
     cloudName = "dhpdhm86p",
     resourceType = "image",
-    customPublicId = null // Optional: Use a custom public ID
+    customPublicId = null 
   ) => {
     // Check if the file is already uploaded (cached)
     if (uploadCache[file.name]) {
       console.log(`Reusing cached URL for file: ${file.name}`);
       return uploadCache[file.name];
     }
+    const fileExists = await checkExistingFile(publicId, "dhpdhm86p");
+
+  if (fileExists) {
+    console.log(`Reusing existing file: ${publicId}`);
+    return `https://res.cloudinary.com/dhpdhm86p/image/upload/${publicId}`;
+  }
   
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", uploadPreset);
     formData.append("folder", "scroll_and_shop"); // Optional: Specify folder
   
-    // Use the provided custom public ID or fallback to the filename (without extension)
-    const publicId = customPublicId || file.name.split(".")[0]; // File name without extension
+    // Use the file's name without extension as `public_id`
+    const publicId = customPublicId || file.name.split(".")[0];
     formData.append("public_id", publicId);
   
     const url = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
@@ -110,6 +107,8 @@ const ProductManagement = ({ categories }) => {
   };
   
   
+  
+  
 
   // Handle text or numeric input changes
   const handleInputChange = (e) => {
@@ -132,7 +131,18 @@ const ProductManagement = ({ categories }) => {
  
 
   
-
+  const checkExistingFile = async (fileName, cloudName) => {
+    const url = `https://api.cloudinary.com/v1_1/${cloudName}/resources/image/upload`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Basic ${btoa("your_api_key:your_api_secret")}`,
+      },
+    });
+    const data = await response.json();
+    return data.resources.some((resource) => resource.public_id === fileName);
+  };
+  
 
 
   const handleSave = async () => {
@@ -154,53 +164,48 @@ const ProductManagement = ({ categories }) => {
           finalProduct.mainImage,
           process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET,
           process.env.REACT_APP_CLOUDINARY_CLOUD_NAME,
-          "image"
+          "image",
+          finalProduct.mainImage.name.split(".")[0] // Use original file name
         );
         finalProduct.mainImage = url;
       }
-
-      // Upload sliderImages
+      
       if (
         Array.isArray(finalProduct.sliderImages) &&
         finalProduct.sliderImages.length > 0
       ) {
-        // Filter out any existing string URLs
-        const sliderFiles = finalProduct.sliderImages.filter(
-          (img) => img instanceof File
-        );
+        const sliderFiles = finalProduct.sliderImages.filter((img) => img instanceof File);
         if (sliderFiles.length > 0) {
-          // Upload them in parallel
           const uploadPromises = sliderFiles.map((file) =>
             uploadToCloudinary(
               file,
               process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET,
               process.env.REACT_APP_CLOUDINARY_CLOUD_NAME,
-              "image"
+              "image",
+              file.name.split(".")[0] // Use original file name
             )
           );
           const sliderUrls = await Promise.all(uploadPromises);
-          // Keep any already-string URLs
-          const existing = finalProduct.sliderImages.filter(
-            (img) => typeof img === "string"
-          );
+          const existing = finalProduct.sliderImages.filter((img) => typeof img === "string");
           finalProduct.sliderImages = [...existing, ...sliderUrls];
         }
       }
+      
 
      
     
 
-      // Upload video if it's a File
       if (finalProduct.video instanceof File) {
         const uploadedVideoUrl = await uploadToCloudinary(
           finalProduct.video,
           process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET,
           process.env.REACT_APP_CLOUDINARY_CLOUD_NAME,
-          "video"
+          "video",
+          finalProduct.video.name.split(".")[0] // Use original file name
         );
         finalProduct.video = uploadedVideoUrl;
       }
-
+      
       console.log("Final Product to Save:", finalProduct);
 
       // Build the input object for the GraphQL mutation

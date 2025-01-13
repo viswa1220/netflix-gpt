@@ -1,156 +1,170 @@
-import React, { useEffect } from "react";
-import * as echarts from "echarts";
+import React, { useEffect, useState } from "react";
+import { graphQLCommand } from "../../util";
+import OrderDetails from "../OrderDetails/OrderDetails";
 
 const Dashboard = () => {
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [orderStatusCounts, setOrderStatusCounts] = useState({ pending: 0, completed: 0 });
+  const [categoryRevenue, setCategoryRevenue] = useState({}); // To store revenue based on category
+
+  // Function to calculate total revenue from completed orders, including offers
+  const calculateTotalRevenue = (orders) => {
+    let totalRev = 0;
+    orders.forEach((order) => {
+      // Apply offer discount if available for the entire order
+      const discount = order.offer ? (order.totalAmount * (order.offer / 100)) : 0;
+      const finalAmount = order.totalAmount - discount;
+      totalRev += finalAmount; // Add the final amount after applying the discount
+    });
+    return totalRev;
+  };
+
+  // Function to calculate revenue per category from completed orders
+  const calculateRevenueByCategory = (orders) => {
+    let categoryRevenueMap = {};
+
+    orders.forEach((order) => {
+      order.cart.forEach((item) => {
+        // Apply offer discount if available for the item
+        const discount = item.offer ? (item.price * item.quantity * (item.offer / 100)) : 0;
+        const finalRevenue = item.price * item.quantity - discount;
+
+        // Add to the revenue of the respective category
+        if (categoryRevenueMap[item.categoryName]) {
+          categoryRevenueMap[item.categoryName] += finalRevenue;
+        } else {
+          categoryRevenueMap[item.categoryName] = finalRevenue;
+        }
+      });
+    });
+
+    return categoryRevenueMap;
+  };
+
   useEffect(() => {
-    // Sales Trends Line Chart
-    const salesChart = echarts.init(document.getElementById("sales-chart"));
-    salesChart.setOption({
-      title: {
-        text: "Sales Trends",
-        left: "center",
-      },
-      tooltip: {
-        trigger: "axis",
-      },
-      xAxis: {
-        type: "category",
-        data: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-      },
-      yAxis: {
-        type: "value",
-      },
-      series: [
-        {
-          name: "Sales",
-          type: "line",
-          data: [300, 500, 700, 900, 1100, 1300],
-        },
-      ],
-    });
-
-    // Revenue Distribution Pie Chart
-    const revenueChart = echarts.init(document.getElementById("revenue-chart"));
-    revenueChart.setOption({
-      title: {
-        text: "Category-wise Revenue",
-        left: "center",
-      },
-      tooltip: {
-        trigger: "item",
-      },
-      legend: {
-        bottom: "10%",
-      },
-      series: [
-        {
-          name: "Revenue",
-          type: "pie",
-          radius: "50%",
-          data: [
-            { value: 40, name: "Electronics" },
-            { value: 30, name: "Clothing" },
-            { value: 20, name: "Shoes" },
-            { value: 10, name: "Accessories" },
-          ],
-          emphasis: {
-            itemStyle: {
-              shadowBlur: 10,
-              shadowOffsetX: 0,
-              shadowColor: "rgba(0, 0, 0, 0.5)",
-            },
-          },
-        },
-      ],
-    });
-
-    return () => {
-      salesChart.dispose();
-      revenueChart.dispose();
+    const fetchMetrics = async () => {
+      const productQuery = `
+        query {
+          totalProducts
+        }
+      `;
+      const revenueQuery = `
+        query {
+          totalRevenue
+        }
+      `;
+      const orderStatusQuery = `
+        query {
+          totalOrdersByStatus {
+            pending
+            completed
+          }
+        }
+      `;
+      const ordersQuery = `
+        query GetAllOrders {
+          getAllOrders {
+            id
+            userDetails {
+              fullName
+              email
+            }
+            address
+            cart {
+              name
+              price
+              quantity
+              image
+              categoryName
+              offer
+            }
+            paymentDetails {
+              method
+              upiId
+            }
+            totalAmount
+            status
+          }
+        }
+      `;
+  
+      try {
+        const [
+          productData,
+          revenueData,
+          orderStatusData,
+          ordersData
+        ] = await Promise.all([
+          graphQLCommand(productQuery),
+          graphQLCommand(revenueQuery),
+          graphQLCommand(orderStatusQuery),
+          graphQLCommand(ordersQuery),
+        ]);
+  
+        setTotalProducts(productData.totalProducts);
+  
+        // Filter completed orders
+        const completedOrders = ordersData.getAllOrders.filter(order => order.status === "Completed");
+  
+        // Calculate total revenue from completed orders
+        setTotalRevenue(calculateTotalRevenue(completedOrders)); // Calculate total revenue from completed orders
+        setOrderStatusCounts(orderStatusData.totalOrdersByStatus);
+        setTotalOrders(
+          orderStatusData.totalOrdersByStatus.pending + orderStatusData.totalOrdersByStatus.completed
+        );
+  
+        // Calculate category-based revenue for completed orders and set the state
+        const calculatedCategoryRevenue = calculateRevenueByCategory(completedOrders);
+        setCategoryRevenue(calculatedCategoryRevenue);
+  
+      } catch (error) {
+        console.error("Error fetching metrics:", error);
+      }
     };
+  
+    fetchMetrics(); // Fetch all data when the component is mounted
   }, []);
-
-  const metrics = [
-    { label: "Total Revenue", value: "₹1,20,000" },
-    { label: "Total Orders", value: "450" },
-    { label: "Total Products", value: "320" },
-    { label: "Pending Orders", value: "15" },
-    { label: "Low Stock Alerts", value: "8" },
-  ];
-
-  const recentActivities = [
-    { activity: "Added a new product: iPhone 14", time: "5 mins ago" },
-    { activity: "Updated stock for 'Nike Shoes'", time: "30 mins ago" },
-    { activity: "Order #12345 marked as shipped", time: "1 hour ago" },
-  ];
-
-  const navigationLinks = [
-    { label: "Manage Products", href: "/manageproducts" },
-    { label: "Orders", href: "/orders" },
-    { label: "Booking History", href: "/bookinghistory" },
-  ];
-
+  
   return (
-    <div className="min-h-screen p-6 bg-gray-100">
-      <h1 className="text-2xl font-bold text-center mb-6">Admin Dashboard</h1>
+    <div className="min-h-screen text-white p-6">
+      <h1 className="text-3xl font-bold text-center mb-8">
+        <span className="bg-primaryBlack p-4 rounded-lg shadow-lg">Admin Dashboard</span>
+      </h1>
 
       {/* Metrics Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-6">
-        {metrics.map((metric, index) => (
-          <div
-            key={index}
-            className="p-6 bg-gradient-to-r from-purple-50 to-purple-100 text-black border-2 border-gray-300 rounded-lg shadow-md hover:shadow-xl"
-          >
-            <h2 className="text-lg font-semibold">{metric.label}</h2>
-            <p className="text-3xl font-bold">{metric.value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="p-6 bg-gradient-to-r from-purple-50 to-purple-100 border-2 border-gray-300 rounded-lg shadow-md hover:shadow-xl">
-          <h2 className="text-xl font-semibold mb-4 text-black">Sales Trends</h2>
-          <div id="sales-chart" className="w-full h-64"></div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+        <div className="p-6 text-primaryYellow bg-primaryBlack rounded-lg shadow-lg hover:shadow-xl">
+          <h2 className="text-lg font-semibold">Total Products</h2>
+          <p className="text-3xl font-bold">{totalProducts}</p>
         </div>
-        <div className="p-6 bg-gradient-to-r from-purple-50 to-purple-100 border-2 border-gray-300 rounded-lg shadow-md hover:shadow-xl">
-          <h2 className="text-xl font-semibold mb-4 text-black">Category-wise Revenue</h2>
-          <div id="revenue-chart" className="w-full h-64"></div>
+        <div className="p-6 text-primaryYellow bg-primaryBlack rounded-lg shadow-lg hover:shadow-xl">
+          <h2 className="text-lg font-semibold">Total Orders</h2>
+          <p className="text-3xl font-bold">{totalOrders}</p>
+        </div>
+        <div className="p-6 text-primaryYellow bg-primaryBlack rounded-lg shadow-lg hover:shadow-xl">
+          <h2 className="text-lg font-semibold">Total Revenue</h2>
+          <p className="text-3xl font-bold">₹{totalRevenue.toFixed(2)}</p>
         </div>
       </div>
 
-      {/* Navigation and Recent Activities */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Navigation Section */}
-        <div className="col-span-1 p-6 bg-gradient-to-r from-purple-50 to-purple-100 border-2 border-gray-300 rounded-lg shadow-md hover:shadow-xl">
-          <h2 className="text-xl font-semibold mb-4">Navigation</h2>
-          <ul className="space-y-4">
-            {navigationLinks.map((link, index) => (
-              <li key={index}>
-                <a
-                  href={link.href}
-                  className="block text-blue-600 font-semibold hover:underline"
-                >
-                  {link.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Recent Activities Section */}
-        <div className="col-span-2 p-6 bg-gradient-to-r from-purple-50 to-purple-100 border-2 border-gray-300 rounded-lg shadow-md hover:shadow-xl">
-          <h2 className="text-xl font-semibold mb-4">Recent Activities</h2>
-          <ul className="space-y-4">
-            {recentActivities.map((activity, index) => (
-              <li key={index} className="text-black">
-                <p>{activity.activity}</p>
-                <span className="text-sm text-gray-500">{activity.time}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+      {/* Category-based Revenue Section */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+        {Object.keys(categoryRevenue).length > 0 ? (
+          Object.keys(categoryRevenue).map((category) => (
+            <div key={category} className="p-6 text-primaryYellow bg-primaryBlack rounded-lg shadow-lg hover:shadow-xl">
+              <h2 className="text-lg font-semibold">{category} Revenue</h2>
+              <p className="text-3xl font-bold">₹{categoryRevenue[category].toFixed(2)}</p>
+            </div>
+          ))
+        ) : (
+          <div className="text-center text-gray-500">No category-based revenue data available</div>
+        )}
       </div>
+
+      {/* Order Details Section */}
+      <OrderDetails />
     </div>
   );
 };
