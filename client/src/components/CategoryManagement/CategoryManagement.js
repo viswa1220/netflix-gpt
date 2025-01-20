@@ -38,9 +38,10 @@ export default function CategoryManagement({ categories, setCategories }) {
 
     const publicId = file.name.split(".")[0];
     formData.append("public_id", publicId);
+    const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME
 
     const response = await fetch(
-      `https://api.cloudinary.com/v1_1/dhpdhm86p/image/upload`,
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
       {
         method: "POST",
         body: formData,

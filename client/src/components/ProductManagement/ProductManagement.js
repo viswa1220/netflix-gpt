@@ -17,14 +17,12 @@ const ADD_PRODUCT_MUTATION = `
         name
       }
       description
-    
-      
       mainImage
       sliderImages
       video
       sizes
-  Brand
-  gender
+      Brand
+      gender
       saleStatus
       trendingStatus
     }
@@ -40,8 +38,6 @@ const ProductManagement = ({ categories }) => {
     offer: "",
     productCategory: "",
     description: "",
-  
-   
     mainImage: null,
     sliderImages: [],
     video: null,
@@ -54,97 +50,58 @@ const ProductManagement = ({ categories }) => {
 
   // Loader state (for spinner overlay)
   const [loading, setLoading] = useState(false);
-  const [uploadCache, setUploadCache] = useState({});
+
+  // -- Upload to Cloudinary helper function --
   const uploadToCloudinary = async (
     file,
-    uploadPreset = "scroll_and_shop",
-    cloudName = "dhpdhm86p",
+    uploadPreset = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET,
+    cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME,
     resourceType = "image",
-    customPublicId = null 
+    customPublicId = null
   ) => {
-    // Check if the file is already uploaded (cached)
-    if (uploadCache[file.name]) {
-      console.log(`Reusing cached URL for file: ${file.name}`);
-      return uploadCache[file.name];
-    }
-    const fileExists = await checkExistingFile(publicId, "dhpdhm86p");
-
-  if (fileExists) {
-    console.log(`Reusing existing file: ${publicId}`);
-    return `https://res.cloudinary.com/dhpdhm86p/image/upload/${publicId}`;
-  }
-  
+    const publicId = customPublicId || file.name.split(".")[0];
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", uploadPreset);
-    formData.append("folder", "scroll_and_shop"); // Optional: Specify folder
-  
-    // Use the file's name without extension as `public_id`
-    const publicId = customPublicId || file.name.split(".")[0];
+    formData.append("folder", "scroll_and_shop");
     formData.append("public_id", publicId);
-  
+
     const url = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
-  
-    // Make the API request
     const response = await fetch(url, {
       method: "POST",
       body: formData,
     });
-  
+
     if (!response.ok) {
       throw new Error("Failed to upload file to Cloudinary");
     }
-  
-    const data = await response.json();
-  
-    // Cache the secure URL for future use
-    setUploadCache((prev) => ({
-      ...prev,
-      [file.name]: data.secure_url,
-    }));
-  
-    return data.secure_url; // Return the secure URL of the uploaded file
-  };
-  
-  
-  
-  
 
-  // Handle text or numeric input changes
+    const data = await response.json();
+    return data.secure_url;
+  };
+
+  // -- Handle text or numeric input changes --
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setProduct((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle single-file inputs (mainImage, video, etc.)
+  // -- Handle single-file inputs (mainImage, video, etc.) --
   const handleFileChange = (e, key) => {
     const file = e.target.files[0];
     setProduct((prev) => ({ ...prev, [key]: file }));
   };
 
-  // Handle multiple files for sliderImages
+  // -- Handle multiple files for sliderImages (APPEND instead of replace) --
   const handleSliderImagesChange = (e) => {
-    const files = Array.from(e.target.files);
-    setProduct((prev) => ({ ...prev, sliderImages: files }));
+    const newFiles = Array.from(e.target.files);
+    setProduct((prev) => ({
+      ...prev,
+      sliderImages: [...prev.sliderImages, ...newFiles],
+    }));
   };
 
- 
-
-  
-  const checkExistingFile = async (fileName, cloudName) => {
-    const url = `https://api.cloudinary.com/v1_1/${cloudName}/resources/image/upload`;
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Authorization: `Basic ${btoa("your_api_key:your_api_secret")}`,
-      },
-    });
-    const data = await response.json();
-    return data.resources.some((resource) => resource.public_id === fileName);
-  };
-  
-
-
+  // -- Save (upload + GraphQL) --
   const handleSave = async () => {
     setLoading(true); // show loader/spinner
     try {
@@ -165,16 +122,20 @@ const ProductManagement = ({ categories }) => {
           process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET,
           process.env.REACT_APP_CLOUDINARY_CLOUD_NAME,
           "image",
-          finalProduct.mainImage.name.split(".")[0] // Use original file name
+          finalProduct.mainImage.name.split(".")[0] // Use original file name as publicId
         );
         finalProduct.mainImage = url;
       }
-      
+
+      // Upload slider images (append newly uploaded URLs + keep existing strings)
       if (
         Array.isArray(finalProduct.sliderImages) &&
         finalProduct.sliderImages.length > 0
       ) {
-        const sliderFiles = finalProduct.sliderImages.filter((img) => img instanceof File);
+        // Filter out any File objects
+        const sliderFiles = finalProduct.sliderImages.filter(
+          (img) => img instanceof File
+        );
         if (sliderFiles.length > 0) {
           const uploadPromises = sliderFiles.map((file) =>
             uploadToCloudinary(
@@ -182,30 +143,33 @@ const ProductManagement = ({ categories }) => {
               process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET,
               process.env.REACT_APP_CLOUDINARY_CLOUD_NAME,
               "image",
-              file.name.split(".")[0] // Use original file name
+              file.name.split(".")[0]
             )
           );
           const sliderUrls = await Promise.all(uploadPromises);
-          const existing = finalProduct.sliderImages.filter((img) => typeof img === "string");
-          finalProduct.sliderImages = [...existing, ...sliderUrls];
+
+          // Keep existing string URLs in the array
+          const existingUrls = finalProduct.sliderImages.filter(
+            (img) => typeof img === "string"
+          );
+
+          // Combine existing URLs with newly uploaded ones
+          finalProduct.sliderImages = [...existingUrls, ...sliderUrls];
         }
       }
-      
 
-     
-    
-
+      // Upload video if present
       if (finalProduct.video instanceof File) {
         const uploadedVideoUrl = await uploadToCloudinary(
           finalProduct.video,
           process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET,
           process.env.REACT_APP_CLOUDINARY_CLOUD_NAME,
           "video",
-          finalProduct.video.name.split(".")[0] // Use original file name
+          finalProduct.video.name.split(".")[0]
         );
         finalProduct.video = uploadedVideoUrl;
       }
-      
+
       console.log("Final Product to Save:", finalProduct);
 
       // Build the input object for the GraphQL mutation
@@ -216,7 +180,6 @@ const ProductManagement = ({ categories }) => {
         offer: finalProduct.offer || "",
         productCategory: finalProduct.productCategory || "",
         description: finalProduct.description || "",
-      
         mainImage: finalProduct.mainImage || "",
         sliderImages: finalProduct.sliderImages,
         video: finalProduct.video || "",
@@ -228,10 +191,7 @@ const ProductManagement = ({ categories }) => {
       };
 
       const variables = { input: productInput };
-      const responseData = await graphQLCommand(
-        ADD_PRODUCT_MUTATION,
-        variables
-      );
+      const responseData = await graphQLCommand(ADD_PRODUCT_MUTATION, variables);
 
       console.log("Response from server (addProduct):", responseData);
       alert("Product saved successfully!");
@@ -244,7 +204,6 @@ const ProductManagement = ({ categories }) => {
         offer: "",
         productCategory: "",
         description: "",
-       
         mainImage: null,
         sliderImages: [],
         video: null,
@@ -339,8 +298,6 @@ const ProductManagement = ({ categories }) => {
           className="border p-2 rounded col-span-1 md:col-span-2 w-full"
         />
 
-       
-
         {/* Main Image */}
         <div>
           <label className="block font-semibold mb-2">Main Image</label>
@@ -352,7 +309,7 @@ const ProductManagement = ({ categories }) => {
           />
         </div>
 
-        {/* Slider Images */}
+        {/* Slider Images (APPEND NEW FILES) */}
         <div className="col-span-1 md:col-span-2">
           <label className="block font-semibold mb-2">
             Slider Images (At least 2)
@@ -366,8 +323,6 @@ const ProductManagement = ({ categories }) => {
           />
         </div>
 
-       
-
         {/* Video */}
         <div className="col-span-1 md:col-span-2">
           <label className="block font-semibold mb-2">Video</label>
@@ -379,6 +334,7 @@ const ProductManagement = ({ categories }) => {
           />
         </div>
 
+        {/* Brand */}
         <input
           type="text"
           name="Brand"
@@ -387,6 +343,8 @@ const ProductManagement = ({ categories }) => {
           onChange={handleInputChange}
           className="border p-2 rounded w-full"
         />
+
+        {/* Gender */}
         <select
           name="gender"
           value={product.gender}
@@ -451,7 +409,7 @@ const ProductManagement = ({ categories }) => {
         </button>
       </div>
 
-      {/* CSVUpload component */}
+      {/* CSVUpload component (if needed) */}
       <CSVUpload />
     </div>
   );
