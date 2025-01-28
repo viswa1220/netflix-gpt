@@ -1,139 +1,136 @@
-import React, { useState, useEffect } from "react";
-import * as tf from "@tensorflow/tfjs";
+import React from "react";
+import { Link } from "react-router-dom";
 
-const dummyOrderHistory = [
-  {
-    productId: "6778184a2095fc0d169a98ee",
-    name: "Airpods Pro",
-    category: "Airpods",
-    price: 2300,
-    rating: 4.5,
-    bookings: 120,
-  },
-  {
-    productId: "67781ff2e158a162328cc09e",
-    name: "Smart Watch 2",
-    category: "Smart Watch",
-    price: 3000,
-    rating: 5,
-    bookings: 200,
-  },
-];
+// Check if product is within the last 2 days
+function isNewWithinTwoDays(product) {
+  if (!product.createdAt) return false;
+  const createdAtMillis = Number(product.createdAt); // parse string
+  const createdAtDate = new Date(createdAtMillis);
+  const twoDaysAgo = Date.now() - 2 * 24 * 60 * 60 * 1000;
+  return createdAtDate.getTime() >= twoDaysAgo;
+}
 
-// Utility: Calculate similarity
-const normalize = (value, min, max) => {
-  return (value - min) / (max - min);
-};
+function getNewArrivals(products, count = 5) {
+  return [...products]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, count);
+}
 
-const calculateMatchScore = (
-  product,
-  historyItem,
-  minPrice,
-  maxPrice,
-  minRating,
-  maxRating
-) => {
-  const normalizedProductFeatures = [
-    normalize(product.price, minPrice, maxPrice),
-    normalize(product.rating, minRating, maxRating),
-  ];
-  const normalizedHistoryFeatures = [
-    normalize(historyItem.price, minPrice, maxPrice),
-    normalize(historyItem.rating, minRating, maxRating),
-  ];
+function getTopRated(products, count = 5) {
+  return [...products].sort((a, b) => b.rating - a.rating).slice(0, count);
+}
 
-  const tensorA = tf.tensor(normalizedProductFeatures);
-  const tensorB = tf.tensor(normalizedHistoryFeatures);
+const RecommendationSection = ({ products }) => {
+  if (!products || products.length === 0) return null;
 
-  const similarity =
-    1 - tf.losses.cosineDistance(tensorA, tensorB, 0).dataSync()[0];
-  return Math.round(similarity * 100);
-};
-
-export const getPreferredProducts = (products, orderHistory) => {
-  const prices = products.map((p) => p.price);
-  const ratings = products.map((p) => p.rating);
-
-  const minPrice = Math.min(...prices);
-  const maxPrice = Math.max(...prices);
-  const minRating = Math.min(...ratings);
-  const maxRating = Math.max(...ratings);
-
-  const recommendations = products.map((product) => {
-    const maxScore = orderHistory.reduce((max, historyItem) => {
-      const matchScore = calculateMatchScore(
-        product,
-        historyItem,
-        minPrice,
-        maxPrice,
-        minRating,
-        maxRating
-      );
-      return Math.max(max, matchScore);
-    }, 0);
-
-    return { ...product, matchScore: maxScore };
-  });
-
-  return recommendations
-    .sort((a, b) => b.matchScore - a.matchScore)
-    .slice(0, 10);
-};
-
-// Recommendation Component
-const MostPreferredProducts = ({ products }) => {
-  const [preferredProducts, setPreferredProducts] = useState([]);
-
-  useEffect(() => {
-    const recommendations = getPreferredProducts(products, dummyOrderHistory);
-    setPreferredProducts(recommendations);
-  }, [products]);
+  const newArrivals = getNewArrivals(products, 5);
+  const topRated = getTopRated(products, 5);
 
   return (
-    <div className="bg-gray-100 p-6 rounded-lg shadow-md mt-8">
-      <h2 className="text-2xl font-bold mb-4">
-        Most Preferred Products by Users
-      </h2>
-      <p className="text-gray-600 mb-6">
-        Based on user preferences and bookings
-      </p>
-      {preferredProducts.length > 0 ? (
-        <div className="flex gap-4  overflow-hidden">
-          {preferredProducts.map((product) => (
-            <div
-              key={product.id}
-              className="bg-white p-4 shadow-lg rounded-md min-w-[calc(25%-1rem)] flex-shrink-0"
-              style={{ width: "calc(25% - 1rem)" }}
-            >
-              <img
-                src={product.mainImage}
-                alt={product.name}
-                className="w-full h-40 object-cover mb-4 rounded-md"
-              />
-              <h3 className="text-lg font-semibold">{product.name}</h3>
-              <p className="text-gray-500">Price: ₹{product.price}</p>
-              <p className="text-yellow-500">Rating: {product.rating}★</p>
-              <div
-                className="bg-green-500 text-white text-sm font-bold py-1 px-8 rounded-full inline-block m-8 my-2"
-                title="Match based on user preferences"
-              >
-                {product.matchScore}% Match
-              </div>
-              <div
-                className="bg-blue-100 text-blue-600 text-xs font-bold py-1 px-2 rounded-full inline-block"
-                title="Total Bookings"
-              >
-                {product.bookings || Math.floor(Math.random() * 500) + 50}{" "}
-                Bookings
-              </div>
-            </div>
-          ))}
+    <div className="w-full bg-white">
+      {/* 35px margin on left/right, some vertical spacing */}
+      <div className="mx-[35px] my-8">
+        
+        {/* --- Introductory Text Above New Arrivals --- */}
+        <div className="mb-6 text-gray-800 leading-relaxed">
+          <h3 className="text-xl font-bold mb-2 text-[#8B4513] text-center">
+            Discover Our Freshest Finds
+          </h3>
+          <p className="text-center">
+            Welcome to our newest collection! We constantly update our offerings
+            so you can stay ahead of the trends. Whether you’re hunting for the 
+            latest tech or chic fashion statements, each item is carefully 
+            curated to ensure quality.
+          </p>
         </div>
-      ) : (
-        <p className="text-gray-500">No preferred products available.</p>
-      )}
+
+        {/* --- New Arrivals Section --- */}
+        <section className="mb-10">
+          <h2 className="text-2xl font-bold mb-6 text-center text-[#8B4513]">
+            New Arrivals
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-6">
+            {newArrivals.map((product) => (
+              <div key={product.id} className="relative overflow-hidden rounded-md">
+                {/* Clickable image */}
+                <Link to={`/products/${product.productCategory?.name}/${product.id}`}>
+                  <img
+                    src={product.mainImage}
+                    alt={product.name}
+                    // Higher (square-ish) height
+                    className="w-full h-64 object-cover"
+                  />
+                </Link>
+
+                {/* Show star only if newly added (within 2 days) */}
+                {isNewWithinTwoDays(product) && (
+                  <div
+                    className="absolute top-2 right-2 text-green-500 text-xl"
+                    title="Newly added!"
+                  >
+                    ★
+                  </div>
+                )}
+
+                {/* Overlaid text: name top-left in white, price bottom-left in red, bookings bottom-right in white */}
+                <div className="absolute top-2 left-2 text-white text-sm font-semibold">
+                  {product.name}
+                </div>
+                <div className="absolute bottom-2 left-2 text-red-500 text-sm font-semibold">
+                  ₹{product.price}
+                </div>
+                <div className="absolute bottom-2 right-2 text-white text-sm">
+                  {product.bookings ?? 0}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* --- Some Middle Content (Optional) --- */}
+        <div className="mb-10 text-gray-800 leading-relaxed">
+          <p className="mb-3">
+            Ready to <strong>scroll and shop</strong>? From trending wearables 
+            to must-have gadgets, our range is tailored for every taste and 
+            budget. Keep scrolling to uncover hidden gems and snag them before 
+            they’re gone!
+          </p>
+        </div>
+
+        {/* --- Top Rated Section (No Star) --- */}
+        <section>
+          <h2 className="text-2xl font-bold mb-6 text-center text-[#8B4513]">
+            Top Rated
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-6">
+            {topRated.map((product) => (
+              <div key={product.id} className="relative overflow-hidden rounded-md">
+                <Link to={`/products/${product.productCategory?.name}/${product.id}`}>
+                  <img
+                    src={product.mainImage}
+                    alt={product.name}
+                    className="w-full h-64 object-cover"
+                  />
+                </Link>
+
+                {/* No star here for Top Rated */}
+                <div className="absolute top-2 left-2 text-white text-sm font-semibold">
+                  {product.name}
+                </div>
+                <div className="absolute bottom-2 left-2 text-red-500 text-sm font-semibold">
+                  ₹{product.price}
+                </div>
+                <div className="absolute bottom-2 right-2 text-white text-sm">
+                  {product.bookings ?? 0}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+      </div>
     </div>
   );
 };
 
-export default MostPreferredProducts;
+export default RecommendationSection;

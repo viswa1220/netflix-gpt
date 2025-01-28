@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import NavBar from "../NavBar/NavBar";
-import RecommendationSection from "../RecommendationSection/RecommendationSection";
+
 import Testimonial from "../Testimonial/Testimonial";
 import { graphQLCommand } from "../../util";
 import SliderComponent from "../SliderComponent/SliderComponent";
 import { useNavigate } from "react-router-dom";
+import RecommendationSection from "../RecommendationSection/RecommendationSection";
 
 const HomeComponent = () => {
   const [products, setProducts] = useState([]);
@@ -64,6 +65,7 @@ const HomeComponent = () => {
           description
           saleStatus
           rating
+          createdAt
           productCategory {
             name
           }
@@ -243,7 +245,7 @@ const HomeComponent = () => {
       {/* Sale Section */}
       {/* Sale Section */}
       <section className="py-10 px-8 mx-8">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-8">
+        <h2 className="text-2xl text-[#8B4513] md:text-4xl font-bold text-center mb-8">
           Big Savings on Big SALE!!!
         </h2>
 
@@ -345,8 +347,7 @@ const HomeComponent = () => {
           </div>
         )}
       </section>
-      <RecommendationSection products={products}></RecommendationSection>
-
+      <RecommendationSection products={products} />
       {/* Trending Products Section */}
       <Testimonial></Testimonial>
     </div>

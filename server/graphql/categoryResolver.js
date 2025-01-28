@@ -1,4 +1,5 @@
 const Category = require("../models/Category");
+const Product = require("../models/Product");
 
 const categoryResolver = {
   Query: {
@@ -56,15 +57,20 @@ const categoryResolver = {
     },
 
     // Delete a category by id
-    deleteCategory: async (_, { id }) => {
+     deleteCategory: async (_, { id }) => {
       const category = await Category.findById(id);
       if (!category) {
         throw new Error("Category not found");
       }
-    
+
+      // Delete products referencing the Category via productCategory
+      await Product.deleteMany({ productCategory: id });
+
+      // Then delete the category
       await category.delete();
-      return { message: "Category deleted successfully" };
-    },    
+
+      return { message: "Category and all related products deleted successfully" };
+    },
   },
 };
 
