@@ -9,13 +9,21 @@ const CheckoutForm = () => {
   const [cartItems, setCartItems] = useState([]);
   const [userDetails, setUserDetails] = useState(null);
   const [formData, setFormData] = useState({
-    address: "",
+    // Payment data
     paymentMethod: "UPI",
     upiId: "",
     cardNumber: "",
     cardExpiry: "",
     cardCvc: "",
+
+    // Address fields (we will combine them into one string)
+    street: "",
+    district: "",
+    state: "",
+    pincode: "",
+    country: "",
   });
+
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -54,7 +62,7 @@ const CheckoutForm = () => {
       `;
 
       try {
-        const [cartResponse, userResponse] = await Promise.all([ 
+        const [cartResponse, userResponse] = await Promise.all([
           graphQLCommand(cartQuery, { userId }),
           graphQLCommand(userQuery, { userId }),
         ]);
@@ -71,44 +79,59 @@ const CheckoutForm = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus(null);
-  
+
     if (!cartItems.length) {
-      setStatus({ type: "error", message: "Your cart is empty. Add items before placing an order." });
+      setStatus({
+        type: "error",
+        message: "Your cart is empty. Add items before placing an order.",
+      });
       return;
     }
-  
+
     const errorMessage = validateForm();
     if (errorMessage) {
       setStatus({ type: "error", message: errorMessage });
       return;
     }
-  
+
     setLoading(true);
-  
-    // Calculate total amount based on cart items
+
+    // Calculate total amount
     const totalAmount = Math.max(
-      cartItems.reduce(
-        (total, item) =>
-          total + item.quantity * (item.price - (item.price * (item.offer || 0)) / 100),
-        0
-      ),
+      cartItems.reduce((total, item) => {
+        const discountPercentage = item.offer || 0;
+        const discountedPrice = item.price - (item.price * discountPercentage) / 100;
+        return total + discountedPrice * item.quantity;
+      }, 0),
       0
     );
-  
+
+    // Concatenate address fields into one string
+    const addressString = [
+      formData.street.trim(),
+      formData.district.trim(),
+      formData.state.trim(),
+      formData.pincode.trim(),
+      formData.country.trim(),
+    ]
+      .filter(Boolean) // remove empty strings
+      .join(", ");
+
     // Prepare variables for the mutation
     const variables = {
       input: {
         userDetails: {
-          userId,  // Should be fetched from localStorage
+          userId,
           fullName: userDetails?.fullName,
           email: userDetails?.email,
         },
-        address: formData.address,  // Ensure this is a string
+        address: addressString, // single string for backend
         cart: cartItems.map((item) => ({
           productId: item.productId,
           name: item.name,
@@ -122,20 +145,21 @@ const CheckoutForm = () => {
         paymentDetails: {
           method: formData.paymentMethod,
           upiId: formData.paymentMethod === "UPI" ? formData.upiId.trim() : null,
-          cardDetails: formData.paymentMethod === "Card"
-            ? {
-                number: formData.cardNumber.trim(),
-                expiry: formData.cardExpiry.trim(),
-                cvc: formData.cardCvc.trim(),
-              }
-            : null,
+          cardDetails:
+            formData.paymentMethod === "Card"
+              ? {
+                  number: formData.cardNumber.trim(),
+                  expiry: formData.cardExpiry.trim(),
+                  cvc: formData.cardCvc.trim(),
+                }
+              : null,
         },
-        totalAmount,  // Ensure totalAmount is passed
+        totalAmount,
       },
     };
-  
-    console.log("Payload being sent to the server:", variables);  // Log the payload for verification
-  
+
+    console.log("Payload being sent to the server:", variables);
+
     const createOrderMutation = `
       mutation CreateOrder($input: OrderInput!) {
         createOrder(input: $input) {
@@ -157,15 +181,15 @@ const CheckoutForm = () => {
         }
       }
     `;
-  
+
     try {
       const response = await graphQLCommand(createOrderMutation, variables);
-  
+
       if (!response.createOrder) {
         throw new Error("Failed to create order.");
       }
-  
-      // Clear cart after successful order placement
+
+      // Clear cart after successful order
       const deleteCartMutation = `
         mutation DeleteCart($userId: String!) {
           deleteCart(userId: $userId) {
@@ -174,12 +198,9 @@ const CheckoutForm = () => {
           }
         }
       `;
-  
       await graphQLCommand(deleteCartMutation, { userId });
-  
-      // Clear cart from state
       setCartItems([]);
-  
+
       setStatus({ type: "success", message: "Order placed successfully!" });
       navigate("/thankyou", {
         state: { orderId: response.createOrder.id, totalAmount },
@@ -190,20 +211,20 @@ const CheckoutForm = () => {
       setLoading(false);
     }
   };
-  
-  
-  
 
   const validateForm = () => {
-    if (!formData.address.trim()) {
-      return "Please enter a delivery address.";
+    // Basic check: Ensure at least street, district, state, pincode, or country is entered
+    const { street, district, state, pincode, country, paymentMethod, upiId } = formData;
+
+    if (![street, district, state, pincode, country].some((f) => f.trim())) {
+      return "Please fill out the address fields (street, district, state, pincode, country).";
     }
 
-    if (formData.paymentMethod === "UPI" && !formData.upiId.trim()) {
+    if (paymentMethod === "UPI" && !upiId.trim()) {
       return "Please enter a valid UPI ID.";
     }
 
-    if (formData.paymentMethod === "Card") {
+    if (paymentMethod === "Card") {
       if (!/^[0-9]{16}$/.test(formData.cardNumber.trim())) {
         return "Please enter a valid 16-digit card number.";
       }
@@ -224,7 +245,7 @@ const CheckoutForm = () => {
     return (
       <div>
         <h2>Your cart is empty</h2>
-        <button onClick={() => navigate("/products")}>Shop Now</button>
+        <button onClick={() => navigate("/products/All")}>Shop Now</button>
       </div>
     );
   }
@@ -235,7 +256,9 @@ const CheckoutForm = () => {
 
       {status && (
         <div
-          className={`p-3 rounded-md mb-4 ${status.type === "success" ? "bg-green-500" : "bg-red-500"}`}
+          className={`p-3 rounded-md mb-4 ${
+            status.type === "success" ? "bg-green-500" : "bg-red-500"
+          }`}
         >
           {status.message}
         </div>
@@ -264,8 +287,13 @@ const CheckoutForm = () => {
       <div className="mb-6">
         <ul>
           {cartItems.map((item) => (
-            <li key={item.productId} className="flex justify-between border-b pb-2 mb-2">
-              <span>{item.name} x{item.quantity}</span>
+            <li
+              key={item.productId}
+              className="flex justify-between border-b pb-2 mb-2"
+            >
+              <span>
+                {item.name} x{item.quantity}
+              </span>
               <span>
                 ₹
                 {(
@@ -282,13 +310,49 @@ const CheckoutForm = () => {
       <div className="bg-gray-800 p-3 rounded-md mb-2 flex justify-between items-center">
         <h3 className="text-lg font-semibold">Delivery Address</h3>
       </div>
-      <textarea
-        name="address"
-        value={formData.address}
-        onChange={handleChange}
-        className="w-full p-3 bg-gray-100 rounded-md border"
-        placeholder="Enter Delivery Address"
-      />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-6">
+        <input
+          type="text"
+          name="street"
+          placeholder="Door number and Street"
+          value={formData.street}
+          onChange={handleChange}
+          className="p-2 bg-gray-100 rounded-md border"
+        />
+        <input
+          type="text"
+          name="district"
+          placeholder="District"
+          value={formData.district}
+          onChange={handleChange}
+          className="p-2 bg-gray-100 rounded-md border"
+        />
+        <input
+          type="text"
+          name="state"
+          placeholder="State"
+          value={formData.state}
+          onChange={handleChange}
+          className="p-2 bg-gray-100 rounded-md border"
+        />
+        <input
+          type="text"
+          name="pincode"
+          placeholder="Pincode"
+          value={formData.pincode}
+          onChange={handleChange}
+          className="p-2 bg-gray-100 rounded-md border"
+        />
+        <input
+          type="text"
+          name="country"
+          placeholder="Country"
+          value={formData.country}
+          onChange={handleChange}
+          className="p-2 bg-gray-100 rounded-md border"
+        />
+      </div>
 
       {/* Payment Options Section */}
       <div className="bg-gray-800 p-3 rounded-md mb-2 flex justify-between items-center">
@@ -324,7 +388,7 @@ const CheckoutForm = () => {
               value={formData.cardNumber}
               onChange={handleChange}
               className="w-full p-3 bg-gray-100 rounded-md border mb-2"
-              placeholder="Card Number"
+              placeholder="Card Number (16 digits)"
             />
             <div className="flex gap-4">
               <input

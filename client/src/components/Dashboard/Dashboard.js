@@ -136,7 +136,7 @@ const Dashboard = () => {
 
       {/* Sidebar Navigation */}
       <div className="flex space-x-8 mb-8">
-        <Link to="/order-details">
+        <Link to="/orderDetail">
           <button className="p-3 bg-primaryBlack text-primaryYellow rounded-lg hover:shadow-xl">
             Order Details
           </button>

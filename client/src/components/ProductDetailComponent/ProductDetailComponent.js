@@ -281,7 +281,7 @@ const ProductDetailComponent = () => {
             {product.name}
           </h1>
           {/* Add to Cart + Back Button */}
-          <div className="flex flex-col lg:flex-row lg:space-x-4 mt-4 lg:mt-0">
+          <div className="flex flex-col lg:flex-row lg:space-x-4 mt-4  lg:mt-0">
             <button
               className={`
                 ${
@@ -294,6 +294,7 @@ const ProductDetailComponent = () => {
                 text-lg 
                 py-2 
                 px-4 
+                m-2
                 rounded-md
               `}
               onClick={handleAddToCart}
