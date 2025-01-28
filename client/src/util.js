@@ -1,7 +1,10 @@
-// util.js
 export const graphQLCommand = async (query, variables = {}) => {
   try {
-    const response = await fetch(process.env.REACT_APP_BACKEND_URL || "http://localhost:3001/graphql", {
+    const backendUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:3001/graphql";
+
+    console.log("GraphQL Endpoint:", backendUrl); 
+
+    const response = await fetch(backendUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -17,6 +20,7 @@ export const graphQLCommand = async (query, variables = {}) => {
 
     return json.data;
   } catch (error) {
+    console.error("GraphQL request failed:", error);
     throw error;
   }
 };
