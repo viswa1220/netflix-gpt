@@ -15,7 +15,7 @@ app.use(cors({
   origin: [
     'http://localhost:3000', // Local frontend
     'http://localhost:3001', // Local backend testing
-    'https://scrollndshop.vercel.app', 
+    'https://scrollndshop.vercel.app/', 
    
   ],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // Include OPTIONS for preflight
