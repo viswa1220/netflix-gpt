@@ -157,12 +157,7 @@ const NavBar = () => {
           <Link to="/login" className="text-gray-300 hover:text-white font-medium">
             Login
           </Link>
-          <Link
-            to="/signup"
-            className="bg-blue-600 text-white font-medium py-1.5 px-4 rounded hover:bg-blue-700 transition"
-          >
-            Sign Up
-          </Link>
+          
         </div>
       </div>
 
@@ -193,13 +188,7 @@ const NavBar = () => {
       >
         Login
       </Link>
-      <Link
-        to="/signup"
-        className="bg-blue-600 text-white font-medium py-1.5 px-4 rounded hover:bg-blue-700 transition"
-        onClick={() => setMobileMenuOpen(false)}
-      >
-        Sign Up
-      </Link>
+      
     </div>
   </div>
 )}
