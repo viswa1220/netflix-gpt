@@ -229,7 +229,7 @@ const CartComponent = () => {
 
               {/* Middle Section: Price/Offer */}
               <div>
-                <p className="text-red-500 text-xl font-semibold">
+                <p className="text-[#39FF14] text-xl font-bold">
                   ₹{item.price}
                 </p>
                 {item.offer && (
@@ -265,7 +265,7 @@ const CartComponent = () => {
                 </div>
                 <p className="text-sm text-white font-semibold">
                   Subtotal:
-                  <span className="text-lg text-red-500 font-semibold">  ₹{(item.price * item.quantity).toFixed(2)}</span>
+                  <span className="text-[#39FF14] text-xl font-bold">  ₹{(item.price * item.quantity).toFixed(2)}</span>
                 </p>
               </div>
             </div>

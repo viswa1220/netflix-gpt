@@ -14,10 +14,8 @@ const ProductPage = () => {
   const [searchText, setSearchText] = useState("");
   const [priceRange, setPriceRange] = useState([0, 10000]);
 
- 
   const { categoryName } = useParams();
   const navigate = useNavigate();
-
 
   const fetchAllProducts = useCallback(async () => {
     const query = `
@@ -45,7 +43,6 @@ const ProductPage = () => {
       setFilteredProducts(allProds);
       console.log(allProds);
 
-    
       const categoryList = [
         ...new Set(allProds.map((p) => p.productCategory.name)),
       ];
@@ -57,11 +54,9 @@ const ProductPage = () => {
     }
   }, []);
 
-
   const fetchProductsByCategory = useCallback(
     async (catName) => {
       if (!catName || catName === "All") {
-      
         fetchAllProducts();
         return;
       }
@@ -283,7 +278,7 @@ const ProductPage = () => {
                   <h3 className="text-xl font-bold text-yellow-400">
                     {product.name}
                   </h3>
-                  <span className="text-red-500 text-xl font-bold ml-2">
+                  <span className="text-[#39FF14] text-xl font-bold ml-2">
                     ₹{product.price}
                   </span>
                 </div>
@@ -300,7 +295,7 @@ const ProductPage = () => {
                   absolute 
                   bottom-2 
                   left-2 
-                  bg-black/60 
+                 
                   text-white 
                   text-xs 
                   px-2 
@@ -312,9 +307,9 @@ const ProductPage = () => {
                 "
               >
                 <span className="text-yellow-400 mr-1 text-white text-xl font-semibold">
-                      {"★".repeat(Math.floor(product.rating)) +
-                        "☆".repeat(5 - Math.floor(product.rating))}
-                    </span>
+                  {"★".repeat(Math.floor(product.rating)) +
+                    "☆".repeat(5 - Math.floor(product.rating))}
+                </span>
               </div>
             </div>
           ))

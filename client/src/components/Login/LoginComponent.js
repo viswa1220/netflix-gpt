@@ -11,13 +11,7 @@ import { graphQLCommand } from "../../util";
 import { useNavigate } from "react-router-dom";
 
 // Example Footer pinned at bottom if content is short
-const Footer = () => {
-  return (
-    <footer className="w-full bg-[#FFD65A] text-[#252F3B] py-3 text-center mt-auto">
-      <p className="font-semibold">© 2025 Scroll And Shop. All rights reserved.</p>
-    </footer>
-  );
-};
+
 
 const LoginPage = () => {
   const [isSignInForm, setSignInForm] = useState(true);
@@ -315,8 +309,7 @@ const LoginPage = () => {
         </p>
       </form>
 
-      {/* FOOTER (PINNED AT BOTTOM IF CONTENT IS SHORT) */}
-      <Footer />
+     
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import NavBar from "../NavBar/NavBar";
-import Testimonial from "../Testimonial/Testimonial";
+
 import { graphQLCommand } from "../../util";
 import SliderComponent from "../SliderComponent/SliderComponent";
 import { useNavigate } from "react-router-dom";
@@ -289,7 +289,14 @@ const HomeComponent = () => {
 
       {/* Optional Additional Slider */}
       <SliderComponent />
-
+      <div className="mx-16 mb-3 text-gray-800 leading-relaxed">
+          <p className="mb-3">
+            Ready to <strong>scroll and shop</strong>? From trending wearables
+            to must-have gadgets, our range is tailored for every taste and
+            budget. Keep scrolling to uncover hidden gems and snag them before
+            they’re gone!
+          </p>
+        </div>
       {/* SALE Section */}
       <section className="mx-16 my-8 bg-white">
         <h2 className="text-2xl text-[#8B4513] md:text-4xl font-bold text-center mb-8">
@@ -298,59 +305,76 @@ const HomeComponent = () => {
         {products.length > 0 ? (
           <div
             className="
-              grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-6
-            "
+        grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-6
+      "
           >
             {products.map((item) => (
-              <div
-                key={item.id}
-                className="
-                 relative w-full bg-gray-100 rounded-lg overflow-hidden
-                  aspect-square transform transition duration-300
-                  hover:scale-105 cursor-pointer
-                "
-                onClick={() => {
-                  navigate(`/products/${item.productCategory.name}/${item.id}`);
-                }}
-              >
-                <img
-                  src={item.mainImage}
-                  alt={item.name}
-                  className="
-                    absolute inset-0 w-full h-full object-cover
-                  "
-                />
-                {/* Product Name */}
-                <div className="absolute top-2 left-2">
-                  <h3 className="text-white text-xl font-semibold">
-                    {item.name}
-                  </h3>
-                </div>
-                {/* Bottom Overlay */}
-                <div
-                  className="
-                    absolute bottom-0 left-0 w-full p-3
-                    bg-gradient-to-t from-black/80 to-transparent
-                    text-white flex flex-col gap-2
-                  "
-                >
-                  {/* Pricing */}
-                  <div className="flex items-center">
-                    {item.price && (
-                      <span className="text-red-500 text-xl font-semiboldfont-bold mr-2">
-                        ₹ {item.price}
-                      </span>
-                    )}
-                  </div>
-                  {/* Ratings */}
-                  <div className="flex items-center">
-                    <span className="text-yellow-400 mr-1 text-white text-xl font-semibold">
-                      {"★".repeat(Math.floor(item.rating)) +
-                        "☆".repeat(5 - Math.floor(item.rating))}
-                    </span>
-                  </div>
-                </div>
-              </div>
+             <div
+             key={item.id}
+             className="
+               relative w-full bg-gray-100 rounded-lg overflow-hidden
+               aspect-square transform transition duration-300
+               hover:scale-105 cursor-pointer
+             "
+             onClick={() => {
+               navigate(`/products/${item.productCategory.name}/${item.id}`);
+             }}
+           >
+             {/* Product Image */}
+             <img
+               src={item.mainImage}
+               alt={item.name}
+               className="absolute inset-0 w-full h-full object-cover"
+             />
+           
+             {/* Top-to-Bottom and Bottom-to-Center Gradient */}
+             <div
+               className="
+                h-1/2  absolute 
+                  top-0 
+                  w-full 
+                  bg-gradient-to-b
+                  from-black/50
+                  to-transparent
+               "
+             />
+             <div
+               className="
+                 absolute inset-0
+                 bg-gradient-to-t from-black/40 to-transparent
+               "
+             />
+           
+             {/* Product Name */}
+             <div className="absolute top-2 left-2">
+               <h3 className="text-xl font-bold text-yellow-400">{item.name}</h3>
+             </div>
+           
+             {/* Price (Top-Right) */}
+             <div className="absolute top-3 right-2">
+               <span className="text-[#39FF14] text-xl font-bold">
+                 ₹ {item.price}
+               </span>
+             </div>
+           
+             {/* Bottom Overlay */}
+             <div
+               className="
+                 absolute bottom-0 left-0 w-full p-3
+                 bg-gradient-to-t from-black/10 to-transparent
+                 text-white flex flex-col gap-2
+               "
+             >
+               {/* Ratings */}
+               <div className="flex items-center">
+                 <span className="text-yellow-400 mr-1 text-white text-xl font-semibold">
+                   {"★".repeat(Math.floor(item.rating)) +
+                     "☆".repeat(5 - Math.floor(item.rating))}
+                 </span>
+               </div>
+             </div>
+           </div>
+           
             ))}
           </div>
         ) : (

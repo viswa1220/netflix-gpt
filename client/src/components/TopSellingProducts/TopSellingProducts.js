@@ -141,7 +141,7 @@ const TopSellingProducts = () => {
       <h2 className="text-center text-2xl font-bold mb-6 text-[#8B4513]">
         Top Selling Products
       </h2>
-      <div className="max-w-7xl mx-auto px-4 relative">
+      <div className=" mx-8 px-4 relative">
         {topSellingProducts.length > 0 ? (
           <Slider {...settings}>
             {topSellingProducts.map((product) => (
@@ -162,7 +162,7 @@ const TopSellingProducts = () => {
                     <p className="text-sm">
                       Category: {product.categoryName || "Unknown"}
                     </p>
-                    <p className="text-red-500 text-lg font-bold">
+                    <p className="text-[#39FF14] text-xl font-bold">
                       ₹{product.price}
                     </p>
                   </div>

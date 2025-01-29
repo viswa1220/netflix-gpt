@@ -107,6 +107,19 @@ const PrevArrow = ({ onClick }) => {
                   alt={product.name}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                 />
+                <div
+                className="
+                  absolute 
+                  top-0 
+                  w-full 
+                  h-1/2 
+                  bg-gradient-to-b
+                  from-black/50
+                  to-transparent
+                  pointer-events-none
+                "
+              />
+
 
                 {/* Info Overlay */}
                 <div className="absolute top-0 w-full px-4 py-2 text-white">
@@ -114,7 +127,7 @@ const PrevArrow = ({ onClick }) => {
                     <h3 className="text-xl font-bold text-yellow-400">
                       {product.name}
                     </h3>
-                    <span className="text-red-500 font-bold ml-2">
+                    <span className="text-[#39FF14] text-xl font-bold ml-2 ">
                       ₹{product.price}
                     </span>
                   </div>
@@ -131,7 +144,7 @@ const PrevArrow = ({ onClick }) => {
                     absolute 
                     bottom-2 
                     left-2 
-                    bg-black/60 
+                   
                     text-white 
                     text-xs 
                     px-2 
