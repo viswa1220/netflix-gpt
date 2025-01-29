@@ -145,7 +145,7 @@ const Dashboard = () => {
       text: "Category Revenue",
       left: "center",
       textStyle: {
-        color: "#000", // Black font color
+        color: "#000", 
         fontSize: 16,
       },
     },
@@ -155,45 +155,45 @@ const Dashboard = () => {
         type: 'shadow',
       },
       textStyle: {
-        color: "#000", // Black font color for tooltips
+        color: "#000", 
       },
     },
     grid: {
       left: "5%",
       right: "5%",
-      bottom: "15%", // More space for x-axis labels
+      bottom: "15%", 
       containLabel: true,
     },
     xAxis: {
       type: "category",
       data: categories,
       axisLabel: {
-        color: "#000", // Black font color for X-axis labels
-        rotate: 30, // Rotate labels for better readability
-        interval: 0, // Show all labels
+        color: "#000", 
+        rotate: 30, 
+        interval: 0, 
         formatter: (value) => {
           return value.length > 10 ? value.substring(0, 10) + "..." : value;
         },
       },
       axisLine: {
         lineStyle: {
-          color: "#000", // Black X-axis line
+          color: "#000", 
         },
       },
     },
     yAxis: {
       type: "value",
       axisLabel: {
-        color: "#000", // Black font color for Y-axis labels
+        color: "#000", 
       },
       axisLine: {
-        show: true, // Display Y-axis line
+        show: true, 
         lineStyle: {
-          color: "#000", // Black Y-axis line
+          color: "#000", 
         },
       },
       splitLine: {
-        show: false, // No horizontal gridlines
+        show: false, 
       },
     },
     series: [

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { graphQLCommand } from "../../util";
-import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
+import { useNavigate } from 'react-router-dom';
 
 const AdminProductComponent = () => {
   const [products, setProducts] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState(null); // To hold the selected product for the popup
-  const [isModalOpen, setIsModalOpen] = useState(false); // To control modal visibility
-  const navigate = useNavigate(); // Hook to navigate to different pages
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   // Fetch all products from the GraphQL API
   useEffect(() => {
@@ -46,7 +46,6 @@ const AdminProductComponent = () => {
     setIsModalOpen(true);
   };
 
-  // Handle modal close
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedProduct(null);
@@ -54,20 +53,41 @@ const AdminProductComponent = () => {
 
   // Handle delete product
   const handleDelete = async (productId) => {
-    // Replace with actual delete mutation or function
-    console.log(`Deleting product with id: ${productId}`);
-    // Perform delete operation and update UI
+    const mutation = `
+      mutation {
+        deleteProduct(id: "${productId}") {
+          success
+          message
+        }
+      }
+    `;
+
+    try {
+      const response = await graphQLCommand(mutation);
+      if (response.deleteProduct.success) {
+        alert(response.deleteProduct.message);
+        // Update the UI by filtering out the deleted product
+        setProducts((prevProducts) =>
+          prevProducts.filter((product) => product.id !== productId)
+        );
+        closeModal();
+      } else {
+        alert(`Error: ${response.deleteProduct.message}`);
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error.message);
+      alert('An error occurred while deleting the product. Please try again.');
+    }
   };
 
-  // Handle edit product
+  // Handle edit product (navigate to edit page)
   const handleEdit = (productId) => {
-    // Navigate to edit page or open modal to edit the product
-    console.log(`Editing product with id: ${productId}`);
+    navigate(`/edit-product/${productId}`);
   };
 
   // Handle back to dashboard
   const handleBack = () => {
-    navigate('/dashboard'); // Navigate back to the dashboard page
+    navigate('/dashboard');
   };
 
   return (
@@ -87,10 +107,9 @@ const AdminProductComponent = () => {
         {products.map((product) => (
           <div
             key={product.id}
-            onClick={() => handleCardClick(product)} // Open modal on card click
+            onClick={() => handleCardClick(product)}
             className="bg-primaryBlack p-4 rounded-lg shadow-xl hover:shadow-2xl transition-all duration-300 text-white cursor-pointer"
           >
-            {/* Product Header */}
             <div className="flex justify-between items-center mb-4">
               <div>
                 <p className="text-lg font-semibold">{product.name}</p>
@@ -98,8 +117,6 @@ const AdminProductComponent = () => {
               </div>
               <p className="text-xl font-bold">₹{product.price}</p>
             </div>
-
-            {/* Product Image (Square) */}
             <img
               src={product.mainImage}
               alt={product.name}
@@ -117,13 +134,12 @@ const AdminProductComponent = () => {
         >
           <div
             className="bg-primaryBlack p-6 rounded-lg w-full sm:w-2/3 lg:w-1/2"
-            onClick={(e) => e.stopPropagation()} // Prevent closing modal when clicking inside
+            onClick={(e) => e.stopPropagation()}
             style={{
-              maxHeight: '80vh', // Fixed height of the modal
-              overflowY: 'auto', // Allow vertical scrolling when content exceeds height
+              maxHeight: '80vh',
+              overflowY: 'auto',
             }}
           >
-            {/* Modal Header */}
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-semibold text-primaryYellow">{selectedProduct.name}</h2>
               <button
@@ -133,15 +149,11 @@ const AdminProductComponent = () => {
                 X
               </button>
             </div>
-
-            {/* Product Image */}
             <img
               src={selectedProduct.mainImage}
               alt={selectedProduct.name}
               className="w-full h-64 object-cover mb-4 rounded-md"
             />
-
-            {/* Product Description */}
             <div className="mb-4">
               <p><strong>Description:</strong> {selectedProduct.description}</p>
               <p><strong>Brand:</strong> {selectedProduct.Brand}</p>
@@ -149,8 +161,6 @@ const AdminProductComponent = () => {
               <p><strong>Available Count:</strong> {selectedProduct.availableCount}</p>
               <p><strong>Offer:</strong> {selectedProduct.offer}% Off</p>
             </div>
-
-            {/* Slider Images */}
             {selectedProduct.sliderImages && selectedProduct.sliderImages.length > 0 && (
               <div className="mb-4 overflow-x-auto">
                 <h3 className="text-xl font-semibold text-primaryYellow mb-2">Additional Images</h3>
@@ -166,8 +176,6 @@ const AdminProductComponent = () => {
                 </div>
               </div>
             )}
-
-            {/* Video Section */}
             {selectedProduct.video && (
               <div className="mb-4 overflow-auto">
                 <h3 className="text-xl font-semibold text-primaryYellow mb-2">Product Video</h3>
@@ -184,8 +192,6 @@ const AdminProductComponent = () => {
                 </div>
               </div>
             )}
-
-            {/* Edit and Delete Buttons */}
             <div className="flex justify-between mt-4">
               <button
                 onClick={() => handleEdit(selectedProduct.id)}

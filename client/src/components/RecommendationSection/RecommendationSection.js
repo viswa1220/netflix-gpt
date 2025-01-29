@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 // Check if product is within the last 2 days
 function isNewWithinTwoDays(product) {
   if (!product.createdAt) return false;
-  const createdAtMillis = Number(product.createdAt); // parse string
+  const createdAtMillis = Number(product.createdAt); 
   const createdAtDate = new Date(createdAtMillis);
   const twoDaysAgo = Date.now() - 2 * 24 * 60 * 60 * 1000;
   return createdAtDate.getTime() >= twoDaysAgo;

@@ -199,19 +199,31 @@ const productResolver = {
     // Delete a product
     deleteProduct: async (_, { id }) => {
       try {
+        // Find the product by the provided ID
         const product = await Product.findOne({ productId: id });
         if (!product) {
           throw new Error("Product not found.");
         }
-
+    
+        // Delete the product
         await product.delete();
-        return { message: `Product with ID ${id} deleted successfully.` };
+    
+        return {
+          success: true,
+          message: `Product with ID ${id} deleted successfully.`,
+        };
       } catch (error) {
         console.error(`Error deleting product (${id}):`, error);
-        throw new Error("Failed to delete product.");
+    
+        // Return a structured error response
+        return {
+          success: false,
+          message: "Failed to delete product. Please try again later.",
+        };
       }
     },
   },
+    
 };
 
 module.exports = productResolver;
