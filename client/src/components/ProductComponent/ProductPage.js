@@ -271,7 +271,7 @@ const ProductPage = () => {
                   w-full 
                   h-1/2 
                   bg-gradient-to-b
-                  from-black/40
+                  from-black/50
                   to-transparent
                   pointer-events-none
                 "
@@ -283,7 +283,7 @@ const ProductPage = () => {
                   <h3 className="text-xl font-bold text-yellow-400">
                     {product.name}
                   </h3>
-                  <span className="text-red-500 font-bold ml-2">
+                  <span className="text-red-500 text-xl font-bold ml-2">
                     ₹{product.price}
                   </span>
                 </div>
@@ -311,14 +311,10 @@ const ProductPage = () => {
                   space-x-1
                 "
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  className="w-4 h-4 text-yellow-300"
-                >
-                  <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.79 1.402 8.168L12 18.896l-7.336 3.872 1.402-8.168L.132 9.21l8.2-1.192z" />
-                </svg>
-                <span>{product.rating ? product.rating.toFixed(1) : "0"}</span>
+                <span className="text-yellow-400 mr-1 text-white text-xl font-semibold">
+                      {"★".repeat(Math.floor(product.rating)) +
+                        "☆".repeat(5 - Math.floor(product.rating))}
+                    </span>
               </div>
             </div>
           ))

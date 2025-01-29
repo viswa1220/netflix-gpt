@@ -8,16 +8,49 @@ const RelatedProductsSection = ({ RelatedProducts, categoryName }) => {
   const navigate = useNavigate();
   
 
-  // Custom Arrow for Slider Navigation
-  const CustomArrow = ({ className, onClick }) => (
+ // Custom Next Arrow
+const NextArrow = ({ onClick }) => {
+  return (
     <div
-      className={`${className} bg-yellow-400 hover:bg-yellow-300 rounded-full p-3`}
+      className="absolute right-0 z-10 flex items-center justify-center w-8 h-8 
+                 text-white bg-gray-800 rounded-full cursor-pointer 
+                 top-1/2 transform -translate-y-1/2 hover:bg-gray-700"
       onClick={onClick}
-      style={{
-        zIndex: 2,
-      }}
-    />
+    >
+      <svg
+        className="w-4 h-4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        viewBox="0 0 24 24"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+      </svg>
+    </div>
   );
+};
+
+// Custom Previous Arrow
+const PrevArrow = ({ onClick }) => {
+  return (
+    <div
+      className="absolute left-0 z-10 flex items-center justify-center w-8 h-8 
+                 text-white bg-gray-800 rounded-full cursor-pointer 
+                 top-1/2 transform -translate-y-1/2 hover:bg-gray-700"
+      onClick={onClick}
+    >
+      <svg
+        className="w-4 h-4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        viewBox="0 0 24 24"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+      </svg>
+    </div>
+  );
+};
 
   // Slider Settings
   const settings = {
@@ -36,8 +69,8 @@ const RelatedProductsSection = ({ RelatedProducts, categoryName }) => {
         settings: { slidesToShow: 1 },
       },
     ],
-    nextArrow: <CustomArrow />,
-    prevArrow: <CustomArrow />,
+    nextArrow: <NextArrow />, // Add custom next arrow
+    prevArrow: <PrevArrow />, // Add custom previous arrow
   };
 
   return (
@@ -109,16 +142,10 @@ const RelatedProductsSection = ({ RelatedProducts, categoryName }) => {
                     space-x-1
                   "
                 >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    className="w-4 h-4 text-yellow-300"
-                  >
-                    <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.79 1.402 8.168L12 18.896l-7.336 3.872 1.402-8.168L.132 9.21l8.2-1.192z" />
-                  </svg>
-                  <span>
-                    {product.rating ? product.rating.toFixed(1) : "0"}
-                  </span>
+                 <span className="text-yellow-400 mr-1 text-white text-xl font-semibold">
+                      {"★".repeat(Math.floor(product.rating)) +
+                        "☆".repeat(5 - Math.floor(product.rating))}
+                    </span>
                 </div>
               </div>
             </div>

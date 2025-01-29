@@ -166,36 +166,44 @@ const NavBar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu (dropdown) */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-[#252F3B] text-[#FFD65A] px-4 pb-4 space-y-4">
-          {/* Categories */}
-          {categories.map((cat) => (
-            <Link
-              key={cat.id}
-              to={
-                cat.name === "All"
-                  ? "/products/All"
-                  : `/products/${encodeURIComponent(cat.name)}`
-              }
-              className="block py-2 border-b border-gray-600"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {cat.name}
-            </Link>
-          ))}
+  <div className="md:hidden bg-[#252F3B] text-[#FFD65A] px-4 pb-4 space-y-4">
+    {/* Categories */}
+    {categories.map((cat) => (
+      <Link
+        key={cat.id}
+        to={
+          cat.name === "All"
+            ? "/products/All"
+            : `/products/${encodeURIComponent(cat.name)}`
+        }
+        className="block py-2 border-b border-gray-600"
+        onClick={() => setMobileMenuOpen(false)}
+      >
+        {cat.name}
+      </Link>
+    ))}
 
-          {/* Login & Sign Up */}
-          <div className="border-t border-gray-600 pt-4 space-y-2">
-            <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-              Login
-            </Link>
-            <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
-              Sign Up
-            </Link>
-          </div>
-        </div>
-      )}
+    {/* Login & Sign Up */}
+    <div className="border-t border-gray-600 pt-4 flex justify-between items-center">
+      <Link
+        to="/login"
+        className="text-gray-300 hover:text-white font-medium"
+        onClick={() => setMobileMenuOpen(false)}
+      >
+        Login
+      </Link>
+      <Link
+        to="/signup"
+        className="bg-blue-600 text-white font-medium py-1.5 px-4 rounded hover:bg-blue-700 transition"
+        onClick={() => setMobileMenuOpen(false)}
+      >
+        Sign Up
+      </Link>
+    </div>
+  </div>
+)}
+
     </nav>
   );
 };

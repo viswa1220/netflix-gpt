@@ -179,8 +179,8 @@ const CartComponent = () => {
   return (
     <div className="cart p-4 bg-white">
       {/* Top line: Cart title + Continue Shopping button */}
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-3xl font-bold text-primaryBlack">Your Cart</h1>
+      <div className="flex justify-between items-center mb-2">
+        <h1 className="text-xl font-bold text-primaryBlack">Your Cart</h1>
         <button
           className="bg-primaryYellow text-black py-2 px-6 rounded-md"
           onClick={() => navigate("/products/All")}
@@ -211,7 +211,7 @@ const CartComponent = () => {
               {/* Top Section */}
               <div className="flex justify-between">
                 <h3
-                  className="text-white text-lg font-bold truncate"
+                  className="text-white text-xl font-bold truncate"
                   title={item.name}
                 >
                   {item.name}
@@ -229,11 +229,11 @@ const CartComponent = () => {
 
               {/* Middle Section: Price/Offer */}
               <div>
-                <p className="text-yellow-400 text-md font-semibold">
+                <p className="text-red-500 text-xl font-semibold">
                   ₹{item.price}
                 </p>
                 {item.offer && (
-                  <span className="text-red-400 text-xs font-medium">
+                  <span className="text-white text-sm font-semibold">
                     {item.offer}% OFF
                   </span>
                 )}
@@ -264,7 +264,8 @@ const CartComponent = () => {
                   </button>
                 </div>
                 <p className="text-sm text-white font-semibold">
-                  Subtotal: ₹{(item.price * item.quantity).toFixed(2)}
+                  Subtotal:
+                  <span className="text-lg text-red-500 font-semibold">  ₹{(item.price * item.quantity).toFixed(2)}</span>
                 </p>
               </div>
             </div>
@@ -291,18 +292,11 @@ const CartComponent = () => {
             {((totalSavings / totalOriginalPrice) * 100).toFixed(2)}% Off)
           </span>
         </div>
-        <div className="flex justify-between mb-2">
-          <span>Delivery Charges</span>
-          <span
-            className={`text-${deliveryCharge === 0 ? "green" : "red"}-500`}
-          >
-            {deliveryCharge === 0 ? "Free" : `₹${deliveryCharge}`}
-          </span>
-        </div>
+       
         <hr className="my-2 border-gray-500" />
         <div className="flex justify-between text-lg font-bold">
           <span>Total Amount</span>
-          <span>₹{(totalDiscountedPrice + deliveryCharge).toFixed(2)}</span>
+          <span>₹{(totalDiscountedPrice ).toFixed(2)}</span>
         </div>
         <p className="text-sm text-green-500 mt-2">
           You will save ₹{totalSavings.toFixed(2)} on this order

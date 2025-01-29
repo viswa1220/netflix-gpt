@@ -5,6 +5,7 @@ import { graphQLCommand } from "../../util";
 import SliderComponent from "../SliderComponent/SliderComponent";
 import { useNavigate } from "react-router-dom";
 import RecommendationSection from "../RecommendationSection/RecommendationSection";
+import TopSellingProducts from "../TopSellingProducts/TopSellingProducts";
 
 const HomeComponent = () => {
   const [products, setProducts] = useState([]);
@@ -145,7 +146,7 @@ const HomeComponent = () => {
                 // Adjust height for mobile vs. desktop via Tailwind
                 // e.g., min-h-[40vh] for mobile, min-h-[60vh] for desktop
                 minHeight: "60vh",
-               
+
                 backgroundImage: `url(${slide.image})`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
@@ -290,22 +291,21 @@ const HomeComponent = () => {
       <SliderComponent />
 
       {/* SALE Section */}
-      <section className="py-10 px-8 mx-8">
+      <section className="mx-16 my-8 bg-white">
         <h2 className="text-2xl text-[#8B4513] md:text-4xl font-bold text-center mb-8">
           Big Savings on Big SALE!!!
         </h2>
         {products.length > 0 ? (
           <div
             className="
-              grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6
-              gap-6 w-full
+              grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-6
             "
           >
             {products.map((item) => (
               <div
                 key={item.id}
                 className="
-                  relative w-full bg-gray-100 rounded-lg overflow-hidden
+                 relative w-full bg-gray-100 rounded-lg overflow-hidden
                   aspect-square transform transition duration-300
                   hover:scale-105 cursor-pointer
                 "
@@ -322,7 +322,7 @@ const HomeComponent = () => {
                 />
                 {/* Product Name */}
                 <div className="absolute top-2 left-2">
-                  <h3 className="text-white px-2 py-1 text-sm sm:text-base">
+                  <h3 className="text-white text-xl font-semibold">
                     {item.name}
                   </h3>
                 </div>
@@ -337,19 +337,18 @@ const HomeComponent = () => {
                   {/* Pricing */}
                   <div className="flex items-center">
                     {item.price && (
-                      <span className="text-sm font-bold mr-2">
+                      <span className="text-red-500 text-xl font-semiboldfont-bold mr-2">
                         ₹ {item.price}
                       </span>
                     )}
                   </div>
                   {/* Ratings */}
-                  {item.rating && (
-                    <div className="flex items-center">
-                      <span className="text-yellow-400 mr-1">
-                        {"★".repeat(Math.floor(item.rating))}
-                      </span>
-                    </div>
-                  )}
+                  <div className="flex items-center">
+                    <span className="text-yellow-400 mr-1 text-white text-xl font-semibold">
+                      {"★".repeat(Math.floor(item.rating)) +
+                        "☆".repeat(5 - Math.floor(item.rating))}
+                    </span>
+                  </div>
                 </div>
               </div>
             ))}
@@ -361,11 +360,9 @@ const HomeComponent = () => {
         )}
       </section>
 
-      {/* Recommendation Section (Optional) */}
       <RecommendationSection products={recProducts} />
 
-      {/* Testimonials */}
-      <Testimonial />
+      <TopSellingProducts></TopSellingProducts>
     </div>
   );
 };

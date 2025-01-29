@@ -221,7 +221,6 @@ const ProductDetailComponent = () => {
       });
 
       if (response.addToCart) {
-        window.dispatchEvent(new Event("cartUpdated"));
         alert("Item added to cart!");
       }
     } catch (error) {
@@ -523,58 +522,69 @@ const ProductDetailComponent = () => {
           </div>
         </div>
 
-        {/* Add Review Modal */}
         {showAddReview && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-lg p-6 w-[90%] max-w-[500px]">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">
-                Add Review
-              </h3>
-              <textarea
-                className="w-full p-2 border rounded-md mb-4"
-                placeholder="Write your review..."
-                value={newReview.comment}
-                onChange={(e) =>
-                  setNewReview({ ...newReview, comment: e.target.value })
-                }
-              />
-              <input
-                type="number"
-                max="5"
-                min="1"
-                className="w-full p-2 border rounded-md mb-4"
-                placeholder="Rating (1-5)"
-                value={newReview.rating}
-                onChange={(e) =>
-                  setNewReview({
-                    ...newReview,
-                    rating: Number(e.target.value),
-                  })
-                }
-              />
-              <div className="flex justify-end">
-                <button
-                  className="bg-gray-400 text-white px-4 py-2 rounded-md hover:bg-gray-500 mr-2"
-                  onClick={() => setShowAddReview(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="
-                    bg-primaryBlack
-                    text-primaryYellow
-                    px-4 py-2
-                    rounded-md
-                    hover:opacity-80
-                  "
-                  onClick={handleAddReview}
-                >
-                  Submit
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="bg-white rounded-lg shadow-lg p-6 w-[90%] max-w-[500px]">
+      <h3 className="text-lg font-bold text-gray-800 mb-4">Add Review</h3>
+      <textarea
+        className="w-full p-2 border rounded-md mb-4"
+        placeholder="Write your review..."
+        value={newReview.comment}
+        onChange={(e) =>
+          setNewReview({ ...newReview, comment: e.target.value })
+        }
+      />
+      {/* Star Rating Section */}
+      <div className="flex items-center mb-4">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <svg
+            key={star}
+            onClick={() =>
+              setNewReview({ ...newReview, rating: star })
+            }
+            xmlns="http://www.w3.org/2000/svg"
+            fill={newReview.rating >= star ? "currentColor" : "none"}
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            className={`w-8 h-8 cursor-pointer ${
+              newReview.rating >= star
+                ? "text-yellow-500"
+                : "text-gray-300"
+            }`}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.518 4.674a1 1 0 00.95.69h4.905c.969 0 1.371 1.24.588 1.81l-3.974 2.89a1 1 0 00-.364 1.118l1.518 4.674c.3.921-.755 1.688-1.54 1.118l-3.974-2.89a1 1 0 00-1.175 0l-3.974 2.89c-.784.57-1.838-.197-1.54-1.118l1.518-4.674a1 1 0 00-.364-1.118L2.98 9.4c-.784-.57-.38-1.81.588-1.81h4.905a1 1 0 00.95-.69l1.518-4.674z"
+            />
+          </svg>
+        ))}
+      </div>
+      <div className="flex justify-end">
+        <button
+          className="bg-gray-400 text-white px-4 py-2 rounded-md hover:bg-gray-500 mr-2"
+          onClick={() => setShowAddReview(false)}
+        >
+          Cancel
+        </button>
+        <button
+          className="
+            bg-primaryBlack
+            text-primaryYellow
+            px-4 py-2
+            rounded-md
+            hover:opacity-80
+          "
+          onClick={handleAddReview}
+        >
+          Submit
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
         {/* Related Products */}
         <div className="my-2">
