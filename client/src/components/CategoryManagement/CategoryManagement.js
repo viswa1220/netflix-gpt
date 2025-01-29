@@ -5,7 +5,7 @@ export default function CategoryManagement({ categories, setCategories }) {
   const [newName, setNewName] = useState("");
   const [newImage, setNewImage] = useState(null);
   const [newCategoryID, setNewCategoryID] = useState("");
-  const [newDescription, setDescription] = useState("");
+  const [newDescription, setNewDescription] = useState("");
 
   const [editingId, setEditingId] = useState(null);
   const [editCategoryName, setEditCategoryName] = useState("");
@@ -17,28 +17,30 @@ export default function CategoryManagement({ categories, setCategories }) {
 
   const fileInputRef = useRef(null);
 
+  // Generate a unique public_id for Cloudinary to avoid overwriting/caching
   const uploadToCloudinary = async (file) => {
     const maxSize = 10485760; // 10MB in bytes
 
-    // Check if file size exceeds the limit
     if (file.size > maxSize) {
       throw new Error(
         "File size exceeds the 10MB limit. Please upload a smaller file."
       );
     }
+
     if (uploadCache[file.name]) {
       console.log(`Reusing cached URL for file: ${file.name}`);
       return uploadCache[file.name];
     }
 
+    const publicId = file.name.split(".")[0] + "-" + Date.now();
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", "scroll_and_shop");
     formData.append("folder", "categories");
-
-    const publicId = file.name.split(".")[0];
     formData.append("public_id", publicId);
-    const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME
+
+    const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
 
     const response = await fetch(
       `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
@@ -54,7 +56,6 @@ export default function CategoryManagement({ categories, setCategories }) {
 
     const data = await response.json();
 
-    // Cache the URL for this file
     setUploadCache((prev) => ({
       ...prev,
       [file.name]: data.secure_url,
@@ -63,6 +64,12 @@ export default function CategoryManagement({ categories, setCategories }) {
     return data.secure_url;
   };
 
+  // Helper to preview file (if File) or show URL
+  const getPreviewURL = (fileOrUrl) => {
+    return fileOrUrl instanceof File ? URL.createObjectURL(fileOrUrl) : fileOrUrl;
+  };
+
+  // Add Category
   const addCategory = async () => {
     if (!newName.trim() || !newImage || !newCategoryID.trim()) {
       console.error("All fields are required.");
@@ -73,8 +80,8 @@ export default function CategoryManagement({ categories, setCategories }) {
       const imageUrl = await uploadToCloudinary(newImage);
 
       const mutation = `
-        mutation($name: String!, $categoryImage: String!, $categoryID: String!,$description:String!) {
-          addCategory(name: $name, categoryImage: $categoryImage, categoryID: $categoryID,description:$description) {
+        mutation($name: String!, $categoryImage: String!, $categoryID: String!, $description: String!) {
+          addCategory(name: $name, categoryImage: $categoryImage, categoryID: $categoryID, description: $description) {
             id
             name
             categoryImage
@@ -105,15 +112,16 @@ export default function CategoryManagement({ categories, setCategories }) {
       setNewName("");
       setNewImage(null);
       setNewCategoryID("");
-      setDescription("");
+      setNewDescription("");
       if (fileInputRef.current) {
-        fileInputRef.current.value = ""; // Reset file input
+        fileInputRef.current.value = "";
       }
     } catch (err) {
       console.error("Error adding category:", err);
     }
   };
 
+  // Delete Category
   const deleteCategory = async (catId) => {
     const mutation = `
       mutation($id: ID!) {
@@ -124,20 +132,22 @@ export default function CategoryManagement({ categories, setCategories }) {
     `;
     try {
       await graphQLCommand(mutation, { id: catId });
-      setCategories((prev) => prev.filter((c) => c._id !== catId)); // Remove deleted category from state
+      setCategories((prev) => prev.filter((c) => c._id !== catId));
     } catch (err) {
       console.error("Error deleting category:", err);
     }
   };
 
+  // Start Edit
   const startEditCategory = (cat) => {
     setEditingId(cat._id);
     setEditCategoryName(cat.name);
-    setEditCategoryImage(cat.categoryImage);
+    setEditCategoryImage(cat.categoryImage); // This is the existing URL
     setEditCategoryID(cat.categoryID);
     setEditDescription(cat.description);
   };
 
+  // Save Edit
   const saveEditCategory = async () => {
     try {
       let imageUrl = editCategoryImage;
@@ -147,12 +157,18 @@ export default function CategoryManagement({ categories, setCategories }) {
       }
 
       const mutation = `
-        mutation($id: ID!, $name: String!, $categoryImage: String!, $categoryID: String!,$description:String!) {
-          updateCategory(id: $id, name: $name, categoryImage: $categoryImage, categoryID: $categoryID,description:$description) {
+        mutation($id: ID!, $name: String!, $categoryImage: String!, $categoryID: String!, $description: String!) {
+          updateCategory(
+            id: $id
+            name: $name
+            categoryImage: $categoryImage
+            categoryID: $categoryID
+            description: $description
+          ) {
             id
             name
             categoryImage
-            categoryID,
+            categoryID
             description
           }
         }
@@ -173,13 +189,14 @@ export default function CategoryManagement({ categories, setCategories }) {
         name: data.updateCategory.name,
         categoryImage: data.updateCategory.categoryImage,
         categoryID: data.updateCategory.categoryID,
+        description: data.updateCategory.description,
       };
 
       setCategories((prev) =>
         prev.map((cat) => (cat._id === editingId ? updatedCat : cat))
       );
 
-      // Clear form fields
+      // Clear edit fields
       setEditingId(null);
       setEditCategoryName("");
       setEditCategoryImage(null);
@@ -198,6 +215,7 @@ export default function CategoryManagement({ categories, setCategories }) {
     setEditDescription("");
   };
 
+  // Render
   return (
     <div className="p-6 bg-gradient-to-r from-blue-100 to-blue-50 border border-gray-300 rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-4">Category Management</h2>
@@ -219,6 +237,25 @@ export default function CategoryManagement({ categories, setCategories }) {
           onChange={(e) => setNewImage(e.target.files[0])}
           className="border p-2 rounded"
         />
+
+        {/* Preview + Remove for new category image */}
+        {newImage && (
+          <div className="relative w-20 mt-2">
+            <img
+              src={getPreviewURL(newImage)}
+              alt="Preview"
+              className="w-20 h-20 object-cover rounded"
+            />
+            <button
+              type="button"
+              onClick={() => setNewImage(null)}
+              className="absolute top-0 right-0 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+            >
+              X
+            </button>
+          </div>
+        )}
+
         <input
           type="text"
           placeholder="Category ID"
@@ -230,7 +267,7 @@ export default function CategoryManagement({ categories, setCategories }) {
           type="text"
           placeholder="Description"
           value={newDescription}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(e) => setNewDescription(e.target.value)}
           className="border p-2 rounded"
         />
         <button
@@ -253,12 +290,31 @@ export default function CategoryManagement({ categories, setCategories }) {
                   onChange={(e) => setEditCategoryName(e.target.value)}
                   className="border p-2 rounded"
                 />
+
+                {/* If editing image is a File or string, show preview + remove */}
                 <input
                   type="file"
                   accept="image/*"
                   onChange={(e) => setEditCategoryImage(e.target.files[0])}
                   className="border p-2 rounded"
                 />
+                {editCategoryImage && (
+                  <div className="relative w-20 mt-2">
+                    <img
+                      src={getPreviewURL(editCategoryImage)}
+                      alt="Preview"
+                      className="w-20 h-20 object-cover rounded"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setEditCategoryImage(null)}
+                      className="absolute top-0 right-0 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                    >
+                      X
+                    </button>
+                  </div>
+                )}
+
                 <input
                   type="text"
                   value={editDescription}
@@ -288,8 +344,11 @@ export default function CategoryManagement({ categories, setCategories }) {
               </div>
             ) : (
               <div className="flex items-center justify-between">
-                <span>{cat.name}</span>
-                <div className="flex gap-2">
+                <div>
+                  <p className="font-semibold">{cat.name}</p>
+                  <p className="text-sm text-gray-700">{cat.description}</p>
+                </div>
+                <div className="flex items-center gap-4">
                   <img
                     src={cat.categoryImage}
                     alt={cat.name}

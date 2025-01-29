@@ -146,7 +146,7 @@ const Dashboard = () => {
             Manage Products
           </button>
         </Link>
-        <Link to="/edit-product">
+        <Link to="/AdminProduct">
           <button className="p-3 bg-primaryBlack text-primaryYellow rounded-lg hover:shadow-xl">
             Edit Product
           </button>

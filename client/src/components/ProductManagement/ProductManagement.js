@@ -1,9 +1,7 @@
 import React, { useState } from "react";
 import CSVUpload from "../CsvUpload/CSVUpload";
-// 1) Import your graphQLCommand function
 import { graphQLCommand } from "../../util"; // Adjust path if needed
 
-// 2) Define the GraphQL mutation string for adding a product
 const ADD_PRODUCT_MUTATION = `
   mutation AddProduct($input: ProductInput!) {
     addProduct(input: $input) {
@@ -43,7 +41,7 @@ const ProductManagement = ({ categories }) => {
     video: null,
     sizes: [],
     Brand: "",
-    gender: "",
+    gender: "Unisex", // Default
     saleStatus: false,
     trendingStatus: false,
   });
@@ -59,7 +57,9 @@ const ProductManagement = ({ categories }) => {
     resourceType = "image",
     customPublicId = null
   ) => {
-    const publicId = customPublicId || file.name.split(".")[0];
+    // Generate unique public_id to avoid overwriting or caching
+    const publicId = customPublicId || file.name.split(".")[0] + "-" + Date.now();
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", uploadPreset);
@@ -87,9 +87,14 @@ const ProductManagement = ({ categories }) => {
   };
 
   // -- Handle single-file inputs (mainImage, video, etc.) --
-  const handleFileChange = (e, key) => {
+  const handleFileChange = (e, key, resourceType = "image") => {
     const file = e.target.files[0];
     setProduct((prev) => ({ ...prev, [key]: file }));
+  };
+
+  // -- Remove mainImage before saving --
+  const removeMainImage = () => {
+    setProduct((prev) => ({ ...prev, mainImage: null }));
   };
 
   // -- Handle multiple files for sliderImages (APPEND instead of replace) --
@@ -101,12 +106,34 @@ const ProductManagement = ({ categories }) => {
     }));
   };
 
+  // -- Remove one slider image by index --
+  const removeSliderImage = (index) => {
+    setProduct((prev) => {
+      const updated = [...prev.sliderImages];
+      updated.splice(index, 1);
+      return { ...prev, sliderImages: updated };
+    });
+  };
+
+  // -- Remove video before saving --
+  const removeVideo = () => {
+    setProduct((prev) => ({ ...prev, video: null }));
+  };
+
+  // -- Preview helper: if it's a File, return object URL; if string, assume it is a URL
+  const getPreviewURL = (fileOrUrl) => {
+    return fileOrUrl instanceof File ? URL.createObjectURL(fileOrUrl) : fileOrUrl;
+  };
+
   // -- Save (upload + GraphQL) --
   const handleSave = async () => {
     setLoading(true); // show loader/spinner
     try {
       // Validate selected category
-      if (!categories.some((cat) => cat._id === product.productCategory)) {
+      if (
+        product.productCategory &&
+        !categories.some((cat) => cat._id === product.productCategory)
+      ) {
         alert("Invalid category selected. Please select a valid category.");
         setLoading(false);
         return;
@@ -121,8 +148,7 @@ const ProductManagement = ({ categories }) => {
           finalProduct.mainImage,
           process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET,
           process.env.REACT_APP_CLOUDINARY_CLOUD_NAME,
-          "image",
-          finalProduct.mainImage.name.split(".")[0] // Use original file name as publicId
+          "image"
         );
         finalProduct.mainImage = url;
       }
@@ -142,8 +168,7 @@ const ProductManagement = ({ categories }) => {
               file,
               process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET,
               process.env.REACT_APP_CLOUDINARY_CLOUD_NAME,
-              "image",
-              file.name.split(".")[0]
+              "image"
             )
           );
           const sliderUrls = await Promise.all(uploadPromises);
@@ -164,13 +189,10 @@ const ProductManagement = ({ categories }) => {
           finalProduct.video,
           process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET,
           process.env.REACT_APP_CLOUDINARY_CLOUD_NAME,
-          "video",
-          finalProduct.video.name.split(".")[0]
+          "video"
         );
         finalProduct.video = uploadedVideoUrl;
       }
-
-      console.log("Final Product to Save:", finalProduct);
 
       // Build the input object for the GraphQL mutation
       const productInput = {
@@ -209,7 +231,7 @@ const ProductManagement = ({ categories }) => {
         video: null,
         sizes: [],
         Brand: "",
-        gender: "",
+        gender: "Unisex",
         saleStatus: false,
         trendingStatus: false,
       });
@@ -307,13 +329,29 @@ const ProductManagement = ({ categories }) => {
             onChange={(e) => handleFileChange(e, "mainImage")}
             className="border p-2 rounded w-full"
           />
+
+          {/* Preview + Remove Button */}
+          {product.mainImage && (
+            <div className="relative mt-2 inline-block">
+              <img
+                src={getPreviewURL(product.mainImage)}
+                alt="Main Preview"
+                className="w-20 h-20 object-cover rounded"
+              />
+              <button
+                type="button"
+                onClick={removeMainImage}
+                className="absolute top-0 right-0 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+              >
+                X
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Slider Images (APPEND NEW FILES) */}
         <div className="col-span-1 md:col-span-2">
-          <label className="block font-semibold mb-2">
-            Slider Images (At least 2)
-          </label>
+          <label className="block font-semibold mb-2">Slider Images (At least 2)</label>
           <input
             type="file"
             accept="image/*"
@@ -321,6 +359,26 @@ const ProductManagement = ({ categories }) => {
             onChange={handleSliderImagesChange}
             className="border p-2 rounded w-full"
           />
+
+          {/* Previews + Remove Button for Each Slider Image */}
+          <div className="flex flex-wrap gap-2 mt-2">
+            {product.sliderImages.map((img, idx) => (
+              <div key={idx} className="relative inline-block">
+                <img
+                  src={getPreviewURL(img)}
+                  alt={`Slider Preview ${idx}`}
+                  className="w-20 h-20 object-cover rounded"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeSliderImage(idx)}
+                  className="absolute top-0 right-0 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                >
+                  X
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Video */}
@@ -329,9 +387,27 @@ const ProductManagement = ({ categories }) => {
           <input
             type="file"
             accept="video/*"
-            onChange={(e) => handleFileChange(e, "video")}
+            onChange={(e) => handleFileChange(e, "video", "video")}
             className="border p-2 rounded w-full"
           />
+
+          {/* Video Preview + Remove Button */}
+          {product.video && (
+            <div className="relative mt-2 inline-block">
+              <video
+                src={getPreviewURL(product.video)}
+                controls
+                className="w-40 h-auto rounded"
+              />
+              <button
+                type="button"
+                onClick={removeVideo}
+                className="absolute top-0 right-0 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+              >
+                X
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Brand */}
@@ -358,7 +434,7 @@ const ProductManagement = ({ categories }) => {
           <option value="Kids">Kids</option>
         </select>
 
-        {/* Sizes */}
+        {/* Sizes (comma-separated) */}
         <input
           type="text"
           name="sizes"
@@ -367,7 +443,7 @@ const ProductManagement = ({ categories }) => {
           onChange={(e) =>
             setProduct({
               ...product,
-              sizes: e.target.value.split(", ").map((s) => s.trim()),
+              sizes: e.target.value.split(",").map((s) => s.trim()),
             })
           }
           className="border p-2 rounded col-span-1 md:col-span-2 w-full"
@@ -409,8 +485,7 @@ const ProductManagement = ({ categories }) => {
         </button>
       </div>
 
-      {/* CSVUpload component (if needed) */}
-      <CSVUpload />
+     
     </div>
   );
 };

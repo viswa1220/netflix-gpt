@@ -221,6 +221,7 @@ const ProductDetailComponent = () => {
       });
 
       if (response.addToCart) {
+        window.dispatchEvent(new Event("cartUpdated"));
         alert("Item added to cart!");
       }
     } catch (error) {
