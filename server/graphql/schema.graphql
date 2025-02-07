@@ -329,12 +329,6 @@ type MutationResponse {
   message: String!
 }
 
-type Mutation {
-  deleteProduct(id: ID!): DeleteResponse!
-}
 
-type DeleteResponse {
-  success: Boolean!
-  message: String!
-}
+
 
